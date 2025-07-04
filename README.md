@@ -36,7 +36,7 @@ Currently, Nyx is a non-standard bundler.
 
 Nyx uses its own named `import` syntax without the `from "module-name"` clause:
 
-```
+```typescript
 // A.nx
 export class Foo { }
 
@@ -238,7 +238,7 @@ let greeter = new Greeter();
 console.log(greeter.greet(person: "Bob", from: "Livermore"));
 ```
 
-As in Swift, argument labels may be blank by using an underscore (_).
+As in Swift, argument labels may be blank by using an underscore (`_`).
 
 ```typescript
 class Foo {
@@ -258,7 +258,7 @@ Rest parameters and binding destructuring patterns are not supported by `func` m
 
 Nyx supplements JavaScript's [constructor](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Classes/constructor) method with its own initialization system. This enables argument labels to be used with `new()`:
 
-```
+```typescript
 let button = new Button(title: "My Button", color: "#fff")
 ```
 
@@ -420,7 +420,7 @@ class Button extends View {
 ```
 
 
-### The prop keyword
+### Properties
 
 Nyx borrows the concept of properties from Objective-C and implements them via the `prop` keyword.
 
@@ -474,9 +474,9 @@ class Foo {
 ```
 
 
-#### prop Observers
+#### Property Observers
 
-In our internal UI frameworks, it's very common to call `setNeedsDisplay()` or `setNeedsLayout()` in response to a property change.  For example, our Button class needs a redraw when the corner radius changes:
+In our internal UI frameworks, it's common to call `setNeedsDisplay()` or `setNeedsLayout()` in response to a property change.  For example, our Button class needs a redraw when the corner radius changes:
 
 ```typescript
 class Button extends View {
@@ -575,9 +575,9 @@ set title(arg) {
 ```
 
 
-### String interceptors
+### String Interceptors
 
-In our source base, we frequently need to minify/obfuscate/transform strings. The most common examples being CSS class names and log messages.
+In our source base, we frequently need to minify/obfuscate/transform strings. The most common examples include CSS class names and log messages.
 
 String interceptors enable these transformations. An interceptor shares the same syntax as a [tagged template](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals#tagged_templates). However, instead of calling a function at runtime, it is transformed at compile-time into another string.
 
@@ -608,7 +608,7 @@ To demonstrate this, let's create an interceptor to obfuscate log messages. The 
 2. Any portion of the log message with words is obfuscated.
 3. Any portion with only punctuation/spacing is left intact.
 
-We will set the `"interceptors"` object in the [Compiler API](#compiler-api) as follows:
+We will set the `"interceptors"` object in the [Compiler Options](#compiler-options) as follows:
 
 
 ```javascript
@@ -931,7 +931,7 @@ options["after-compile"] = async file => {
 
 #### nyx.generateBuiltins
 
-Generates an array of built-in identifiers for use with the squeezer. See [Generating Built-ins](#generating-builtins).
+Generates an array of built-in identifiers for use with the squeezer. See [Generating Built-ins](#generating-built-ins).
 
 #### nyx.symbolicate
 
