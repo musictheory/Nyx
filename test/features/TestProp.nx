@@ -1,0 +1,123 @@
+// @suite: Feature: prop
+
+// @test: prop
+// ============================================================================
+
+class Foo {
+    prop p: number = 42;
+    checkField(p) { assert.equal(this.#p, p); }
+    checkShortcut(p) { assert.equal(_p, p); }
+}
+
+
+let foo = new Foo();
+
+assert.equal(foo.p, 42);
+foo.checkField(42);
+foo.checkShortcut(42);
+
+foo.p = 157;
+assert.equal(foo.p, 157);
+foo.checkField(157);
+foo.checkShortcut(157);
+
+
+
+// @test: private prop
+// ============================================================================
+
+class Foo {
+    private prop p: number = 42;
+    checkField(p) { assert.equal(this.#p, p); }
+}
+
+
+let foo = new Foo();
+
+assert.equal(foo.p, undefined);
+
+foo.p = 157;
+foo.checkField(42);
+assert.equal(foo.p, 157);
+
+
+
+// @test: readonly prop
+// ============================================================================
+
+class Foo {
+    readonly prop p: number = 42;
+}
+
+let foo = new Foo();
+
+assert.throws(() => { foo.p = 157; });
+
+
+
+// @test: Custom getter/setter
+// ============================================================================
+
+class Foo {
+    prop propWithCustomSetter: number;
+    prop propWithCustomGetter: number;
+
+    set propWithCustomSetter(x: number) {
+        _propWithCustomSetter = 157;
+    }
+
+    get propWithCustomGetter(): number {
+        return 157;
+    }
+}
+
+let foo = new Foo();
+
+foo.propWithCustomSetter = 42;
+foo.propWithCustomGetter = 42;
+
+assert.equal(foo.propWithCustomSetter, 157);
+assert.equal(foo.propWithCustomSetter, 157);
+
+
+
+// @test: Observers
+// @options: { "observers": { "display": "D", "layout": "L" } }
+// @typecheck
+// ============================================================================
+
+import { Nyx }
+
+class View {
+    prop needsLayout: boolean = false;
+    prop needsDisplay: boolean = false;
+
+    [ Nyx.observerSymbol ](arg: string) {
+        if (arg == "D") {
+            _needsDisplay = true;
+        } else if (arg == "L") {
+            _needsLayout = true;
+        }
+    }
+}
+
+class Button extends View {
+    @display prop color: string = "#ff0000";
+    @layout  prop title: string = "Title";
+}
+
+let button = new Button();
+assert.equal(button.needsLayout, false);
+assert.equal(button.needsDisplay, false);
+
+button.color = "#ff0000"; // Button was red and is still red
+assert.equal(button.needsDisplay, false); // needsDisplay still false
+
+button.color = "#00ff00"; // Button was changed to green
+assert.equal(button.needsDisplay, true); // needsDisplay is now true
+
+button.title = "Title"; // Button title not changed
+assert.equal(button.needsLayout, false); // needsLayout still false
+
+button.title = "Different Title"; // Button title changed
+assert.equal(button.needsLayout, true); // needsLayout is now true

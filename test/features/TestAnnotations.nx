@@ -1,0 +1,41 @@
+// @suite: Type Annotations
+
+
+
+// @test: Functions
+// ============================================================================
+
+function foo(param1: string, param2: number): string {
+    return param1 + param2;
+}
+
+const foo2 = function(param1: string, param2: number): string {
+    return param1 + param2;
+}
+
+const foo3 = (param1: string, param2: number) => {
+    return param1 + param2;
+};
+
+
+
+// @test: Class
+// ============================================================================
+
+class Foo {
+    #privateField: string;
+    publicField: string;
+
+    method(param1: string, param2: number): string {
+        return param1 + param2;
+    }
+}
+
+const Foo2 = class {
+    #privateField: string;
+    publicField: string;
+
+    method(param1: string, param2: number): string {
+        return param1 + param2;
+    }
+}

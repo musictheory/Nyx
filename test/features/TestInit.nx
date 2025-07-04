@@ -1,0 +1,122 @@
+// @suite: Feature: init
+
+
+
+// @test: After field initialization
+// ============================================================================
+
+class A {
+    readonly prop field: string = "field";
+    func init() { }
+}
+
+class B extends A {
+    func init() {
+        assert.equal(this.field, "field");
+        super.init();
+    }
+}
+
+new B();
+
+
+
+// @test: Basic Order
+// ============================================================================
+
+class A {
+    readonly prop called: string[] = [ ];
+
+    init(n: number) {
+        if (n === undefined) {
+            this.add("A.init()");
+        } else {
+            this.add("A.init(number)");
+        }
+    }
+
+    func init(s: string) {
+        this.init();
+        this.add("A.init(s:)");
+    }
+
+    func add(_ string: string) {
+        _called.push(string);
+    }
+}
+
+class B extends A {
+     // Enable initializers for this subclass
+    func unused() { }
+}
+
+class C extends B {
+    func init(s: string) {
+        this.add("C.init(s:)");
+        super.init(s: s);
+    }
+
+    func init(s2: string) {
+        super.init(s: s2);
+        this.add("C.init(s:)");
+    }
+}
+
+function check(x, called) {
+    assert.deepEqual(x.called, called);
+}
+
+check(new A(),       [ "A.init()" ]);
+check(new A(s: ""),  [ "A.init()", "A.init(s:)" ]);
+check(new B(),       [ "A.init()" ]);
+check(new B(s: ""),  [ "A.init()",   "A.init(s:)" ]);
+check(new C(s: ""),  [ "C.init(s:)", "A.init()",   "A.init(s:)" ]);
+check(new C(s2: ""), [ "A.init()",   "A.init(s:)", "C.init(s:)" ]);
+
+check(new A(42),     [ "A.init(number)" ]);
+check(new B(42),     [ "A.init(number)" ]);
+check(new C(42),     [ "A.init(number)" ]);
+
+
+// @test: Custom constructor
+// ============================================================================
+
+class Foo {
+    constructor() { }
+    func init() {
+        // Should not be called as class specifies a constructor
+        throw new Error("init was called");
+    }
+}
+
+let f = new Foo();
+
+
+// @test: Post-init
+// ============================================================================
+
+import { Nyx }
+
+class A {
+    func init() { }
+
+    [ Nyx.postInitSymbol ]() {
+        this.doPostInit();
+    }
+}
+
+class B extends A {
+    #foo = "Before";
+
+    func init() {
+        super.init();
+        this.#foo = "After";
+    }
+
+    func doPostInit() {
+        // Ensure that [ Nyx.postInitSymbol ] was called after our init method.
+        assert.equal(this.#foo, "After");
+    }
+}
+
+new B();

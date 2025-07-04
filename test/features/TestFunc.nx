@@ -1,0 +1,42 @@
+// @suite: Feature: func
+
+
+
+// @test: Basic usage
+// @typecheck
+// ============================================================================
+
+class Foo {
+    func f( _ a: number              ): string { return "f(_:)";   }
+    func f(   a: number              ): string { return "f(a:)";   }
+    func f(   a: number,   b: number ): string { return "f(a:b:)"; }
+    func f( _ a: number,   b: number ): string { return "f(_:b:)"; }
+
+    func f(_ a: number, _ b: number, c: number): string { return "f(_:_:c:)"; }
+
+    func noArg(): string { return "noArg()"; }
+}
+
+let foo = new Foo();
+
+assert.equal(foo.f(   42       ), "f(_:)");
+assert.equal(foo.f(a: 42       ), "f(a:)");
+assert.equal(foo.f(a: 42, b: 42), "f(a:b:)");
+assert.equal(foo.f(   42, b: 42), "f(_:b:)");
+assert.equal(foo.f(42, 42, c: 42), "f(_:_:c:)");
+
+assert.equal(foo.noArg(), "noArg()");
+
+
+// @test: Co-exist with class method
+// ============================================================================
+
+class Foo {
+    func f(a: number): string { return "f(a:)";   }
+    f(): string { return "f()"; }
+}
+
+let foo = new Foo();
+assert.equal(foo.f(   42       ), "f()");
+assert.equal(foo.f(a: 42       ), "f(a:)");
+

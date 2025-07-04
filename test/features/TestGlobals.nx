@@ -1,0 +1,32 @@
+// @suite: Feature: global
+
+// @test: Basic usage
+// ============================================================================
+
+// @file: 1.nx
+// ----------------------------------------------------------------------------
+
+global const NumberConst = 42;
+global const NegativeNumberConst = -42;
+global const StringConst = "Foo";
+global const BooleanConst = true;
+
+global function FooFunction(a: number): number {
+    return a + 42;
+}
+
+// @file: 2.nx
+// ----------------------------------------------------------------------------
+
+assert.equal(NumberConst, 42);
+assert.equal(NegativeNumberConst, -42);
+assert.equal(StringConst, "Foo");
+assert.equal(BooleanConst, true);
+
+assert.equal(FooFunction(42), 84);
+
+
+// @test: Must be constant
+// ============================================================================
+
+global const ErrorConst = new Error("Foo"); // @error;

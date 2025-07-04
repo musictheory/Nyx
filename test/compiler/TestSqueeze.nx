@@ -1,0 +1,57 @@
+// @suite: Compiler API: squeeze
+
+// @test: Object Properties
+// @options: { "squeeze": true, "squeeze-builtins": [ "equal" ] }
+// ============================================================================
+
+let TheObject = {
+    foo: 1,
+    bar() { return 2; }
+};
+
+assert.equal(TheObject.foo, 1);
+assert.equal(TheObject["foo"], undefined);
+assert.equal(TheObject.bar(), 2);
+assert.equal(TheObject["bar"], undefined);
+
+let { foo } = TheObject;
+assert.equal(foo, 1);
+
+let TheSecondObject = { foo };
+assert.equal(TheSecondObject.foo, 1);
+
+TheObject.foo = 111;
+assert.equal(TheObject.foo, 111);
+
+
+
+// @test: Class Fields and Methods
+// @options: { "squeeze": true, "squeeze-builtins": [ "equal" ] }
+// ============================================================================
+
+class TheClass {
+    foo = 1;
+    bar() { return 2; }
+};
+
+
+let c = new TheClass();
+assert.equal(c.foo, 1);
+assert.equal(c["foo"], undefined);
+assert.equal(c.bar(), 2);
+assert.equal(c["bar"], undefined);
+
+c.foo = 111;
+assert.equal(c.foo, 111);
+
+
+
+// @test: Don't Squeeze Builtins
+// @options: { "squeeze": true, "squeeze-builtins": [ "equal", "foo" ] }
+// ============================================================================
+
+let x = { };
+x.foo = 1;
+assert.equal(x["foo"], 1);
+
+

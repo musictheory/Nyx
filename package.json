@@ -1,0 +1,33 @@
+{
+    "name": "nyx",
+    "description": "Nyx language transpiler and tools",
+    "homepage": "http://github.com/musictheory/Nyx",
+    "main": "./lib/api.js",
+    "type": "module",
+    "bin": {
+        "nsc": "./bin/nsc"
+    },
+    "version": "0.1.0",
+    "engines": { "node": ">=24.0" },
+    "maintainers": [{
+        "name": "Ricci Adams",
+        "email": "npm@ricciadams.com",
+        "web": "http://www.ricciadams.com"
+    }],
+    "repository": {
+        "type": "git",
+        "url": "http://github.com/musictheory/Nyx.git"
+    },
+    "license": "MIT",
+    "devDependencies": { },
+    "dependencies": {
+        "acorn":       "8.x",
+        "lodash":      "4.x",
+        "source-map":  "0.5.x",
+        "typescript":  "5.8.x"
+    },
+    "scripts": {
+        "test":     "node test/run.js",
+        "coverage": "node test/run.js coverage"
+    }
+}

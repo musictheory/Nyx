@@ -1,0 +1,112 @@
+// @suite: Feature: enum
+
+
+
+// @test: Numeric Enum
+// ============================================================================
+
+enum Foo {
+    zero,
+    one,
+    two = 2,
+    three,
+    four,
+    five
+};
+
+// Test basic auto-increment behavior
+assert.equal(Foo.zero,  0);
+assert.equal(Foo.one,   1);
+assert.equal(Foo.two,   2);
+assert.equal(Foo.three, 3);
+assert.equal(Foo.four,  4);
+assert.equal(Foo.five,  5);
+
+// Test scoping - Foo as a function parameter is a variable, not the enum
+(function(Foo) {
+    assert.strictEqual(Foo.four, undefined);
+    assert.equal(Foo.five, "*FIVE STRING*");
+})({ five: "*FIVE STRING*" });
+
+// Test scoping - Foo in a catch block is a variable, not the enum
+try {
+    throw { five: "*FIVE STRING*" };
+} catch (Foo) {
+    assert.equal(Foo.five, "*FIVE STRING*");
+}
+
+
+
+// @test: String Enum
+// ============================================================================
+
+enum Letters {
+    alpha = "alpha",
+    beta  = "beta",
+    gamma = "gamma",
+    delta = "delta"
+};
+
+assert.equal(Letters.alpha, "alpha");
+assert.equal(Letters.beta,  "beta");
+assert.equal(Letters.gamma, "gamma");
+assert.equal(Letters.delta, "delta");
+
+
+
+// @test: Heterogeneous Enum
+// ============================================================================
+
+enum Foo {
+    zero,
+    one,
+    alpha = "alpha",
+    four = 4,
+    five
+};
+
+
+assert.equal(Foo.zero,  0);
+assert.equal(Foo.one,   1);
+assert.equal(Foo.alpha, "alpha");
+assert.equal(Foo.four,  4);
+assert.equal(Foo.five,  5);
+
+
+
+// @test: Enum Import/Export
+// ============================================================================
+
+// @file: 1.nx
+// ----------------------------------------------------------------------------
+export enum Foo { zero, one };
+
+// @file: 2.nx
+// ----------------------------------------------------------------------------
+import { Foo };
+
+assert.equal(Foo.zero, 0);
+assert.equal(Foo.one,  1);
+
+
+
+// @test: Unknown Member Warning
+// ============================================================================
+
+enum EmptyEnum {
+
+}
+
+EmptyEnum.bar; //@warning
+
+
+
+// @test: Needs Initializer Error
+// ============================================================================
+
+enum NeedsInitializerEnum {
+    alpha = "alpha",
+    beta // @error
+}
+
+

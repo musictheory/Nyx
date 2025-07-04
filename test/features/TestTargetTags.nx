@@ -1,0 +1,31 @@
+// @suite: Feature: Target Tags
+
+
+// @test: Basic Usage
+// @options: { "target-tags": { "alpha": true, "beta": false } }
+// ============================================================================
+
+import { Nyx }
+
+@alpha class AlphaClass {
+
+}
+
+@beta class BetaClass {
+
+}
+
+class Foo {
+    @alpha func alphaFunc(string: string) { };
+    @beta  func betaFunc( string: string) { };
+           func gammaFunc(string: string) { };
+}
+
+
+let alphaClass = new AlphaClass();
+assert.equal(BetaClass, undefined);
+
+let foo = new Foo();
+assert(typeof foo[Nyx.getFuncIdentifier("alphaFunc(string:)")] == "function");
+assert(typeof foo[Nyx.getFuncIdentifier("betaFunc(string:)")] == "undefined");
+assert(typeof foo[Nyx.getFuncIdentifier("gammaFunc(string:)")] == "function");

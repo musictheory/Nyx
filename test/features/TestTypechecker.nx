@@ -1,0 +1,89 @@
+// @suite: Feature: Typechecker
+
+// @test: Basic Usage
+// @typecheck
+// ============================================================================
+
+let s: string = 4; //@type
+
+
+type RectNumber = number;
+
+interface Rect {
+    x: RectNumber;
+    y: RectNumber;
+    width: number;
+    height: number;
+}
+
+
+
+// @test: readonly modifier
+// @typecheck
+// ============================================================================
+
+// Test "readonly" modifier of class field
+
+// class Foo {
+//     readonly x: string;
+// }
+
+// let f = new Foo();
+// f.x = "bar"; // @type
+
+
+
+// @test: interface optional field
+// @typecheck
+// ============================================================================
+
+interface Point   { x: number; y: number; z?: number }
+interface Point2D { x: number; y: number }
+interface Point3D { x: number; y: number; z: number }
+
+let alpha:   Point = { x: 1, y: 2 };
+let alpha3D: Point = { x: 1, y: 2, z: 3 };
+
+let beta:   Point3D = { x: 1, y: 2 }; // @type
+let beta3D: Point3D = { x: 1, y: 2, z: 3 };
+
+function takesPoint(p: Point) { }
+function takesPoint2D(p: Point2D) { }
+function takesPoint3D(p: Point3D) { }
+
+takesPoint(  alpha); takesPoint(  alpha3D); takesPoint(  beta); takesPoint(  beta3D);
+takesPoint2D(alpha); takesPoint2D(alpha3D); takesPoint2D(beta); takesPoint2D(beta3D);
+
+takesPoint3D(alpha);   // @type
+takesPoint3D(alpha3D); // @type
+takesPoint3D(beta);
+takesPoint3D(beta3D);
+
+
+// @test: 'as' expression
+// @typecheck
+// ============================================================================
+
+enum Foo { foo, bar, baz };
+enum Bar { foo, bar, baz };
+
+function takesBar(x: Bar) { }
+let x: Foo = Foo.foo;
+takesBar(x as number as Bar);
+
+
+// @test: postfix '!'
+// @typecheck
+// ============================================================================
+
+function actuallyReturnsNonNullString(): string | null {
+    return "foo";
+}
+
+function takesNonNullString(x: string): void { }
+
+let x1 = actuallyReturnsNonNullString();
+let x2 = actuallyReturnsNonNullString();
+
+takesNonNullString(x1); // @type
+takesNonNullString(x2!);

@@ -1,0 +1,92 @@
+// @suite: Feature: import/export
+
+
+
+// @test: Basic Usage
+// @typecheck
+// ============================================================================
+
+// @file: 1.nx
+// ----------------------------------------------------------------------------
+export enum TheEnum { zero, one };
+
+export function TheFunction() { return 42; }
+export const TheConst = 42;
+
+export class TheClass {
+    foo() { return 42; }
+}
+
+export type TheType = number;
+
+export interface TheInterface {
+    x: number;
+    y: number;
+};
+
+
+// @file: 2.nx
+// ----------------------------------------------------------------------------
+
+import { TheEnum, TheFunction, TheConst, TheClass, TheType, TheInterface }
+
+let x: TheType = TheFunction();
+
+assert.equal(x, 42);
+assert.equal(TheConst, 42);
+
+let theClass = new TheClass();
+assert.equal(theClass.foo(), 42);
+
+let y: TheInterface = { x: 42, y: 42 };
+
+
+
+// @test: Disallow side-effect import
+// ============================================================================
+
+import "Module"; // @error
+
+
+
+// @test: Disallow default import
+// ============================================================================
+
+import foo from "Module"; // @error
+
+
+
+// @test: Disallow namespace import
+// ============================================================================
+
+import * as foo from "Module"; // @error
+
+
+
+// @test: Disallow 'as' import
+// ============================================================================
+
+import { foo as bar } from "Module"; // @error
+
+
+
+// @test: Disallow default export
+// ============================================================================
+
+let foo = { };
+export default foo; // @error
+
+
+
+// @test: Disallow export all
+// ============================================================================
+
+export * from "Module"; // @error
+
+
+
+// @test: Disallow export non-const
+// ============================================================================
+
+export let foo = { }; // @error
+
