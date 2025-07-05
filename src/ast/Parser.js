@@ -298,6 +298,20 @@ parseExprOp(left, leftStartPos, leftStartLoc, minPrec, forInit)
 }
 
 
+nxReplaceStartLocation(targetNode, sourceNode)
+{
+    targetNode.start = sourceNode.start;
+    
+    if (this.options.locations) {
+        targetNode.loc.start = sourceNode.loc.start;
+    }
+    
+    if (this.options.ranges) {
+        targetNode.range[0] = sourceNode.range[0];
+    }
+}
+
+
 nxReadToken_at() // '@'
 {
     ++this.pos;
@@ -514,13 +528,19 @@ parseClassElement(constructorAllowsSuper)
         return this.nxParseFunc(node, isStatic, isAsync, atIdentifier);
 
     } else if (isReadonly && !isAsync && !atIdentifier) {
+        let savedPosition = this.pos;
         let result = super.parseClassElement(constructorAllowsSuper);
         
         if (result.type == Syntax.PropertyDefinition) {
             result.static = isStatic;
             result.readonly = isReadonly;
 
+            this.nxReplaceStartLocation(result, node);
+
             return result;
+
+        } else {
+            this.raise(savedPosition, "'readonly' modifier can only be used on a property declaration.");
         }
     }
 

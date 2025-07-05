@@ -131,7 +131,7 @@ In addition, Nyx supports the following TypeScript types:
 
 #### Additional TypeScript Features
 
-Nyx provides basic support for [Type Aliases](https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#type-aliases), [Interfaces](https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#interfaces), [Type Assertions](https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#type-assertions), and the postfix `!` operator.
+Nyx provides basic support for [Type Aliases](https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#type-aliases), [Interfaces](https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#interfaces), [Type Assertions](https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#type-assertions), [readonly fields](https://www.typescriptlang.org/docs/handbook/2/classes.html#readonly), and the postfix `!` operator.
 
 The following is valid Nyx code:
 

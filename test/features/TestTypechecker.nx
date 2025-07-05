@@ -24,13 +24,15 @@ interface Rect {
 
 // Test "readonly" modifier of class field
 
-// class Foo {
-//     readonly x: string;
-// }
+class Foo {
+    static readonly s: string;
+    readonly x: string;
+}
 
-// let f = new Foo();
-// f.x = "bar"; // @type
+let f = new Foo();
+f.x = "bar"; // @type
 
+Foo.s = "bar"; // @type
 
 
 // @test: interface optional field
