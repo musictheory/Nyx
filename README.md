@@ -583,7 +583,7 @@ String interceptors enable these transformations. An interceptor shares the same
 
 For example, by assigning interceptors to `C` and `L`, we can transform the following:
 
-```
+```typescript
 let element = document.createElement("div");
 element.classList.add(C`Button-outer-container`);
 
@@ -592,7 +592,7 @@ console.log(L`Created the button's outer element!`);
 
 into:
 
-```
+```typescript
 let element = document.createElement("div");
 element.classList.add("ObfuscatedClass1");
 
@@ -1106,5 +1106,5 @@ Nyx's `TypeParser` class is heavily based on [acorn-typescript](https://github.c
 
 runtime.js is public domain.
 
-All other files in this project are licensed under the [MIT license](http://github.com/musictheory/Nyx/raw/master/LICENSE.MIT).
+All other files in this project are licensed under the [MIT license](http://github.com/musictheory/Nyx/raw/main/LICENSE.MIT).
 
