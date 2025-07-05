@@ -115,7 +115,7 @@ generate()
     {
         let name = node.name;
 
-        if (!node.ns_transformable) return;
+        if (!node.nx_transformable) return;
 
         if (inlines.has(name) || model.globalFunctions.has(name)) {
             throw new CompilerIssue(`Cannot use compiler-inlined "${name}" here`, node);

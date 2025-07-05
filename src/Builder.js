@@ -440,7 +440,7 @@ build()
 
     function handleIdentifier(node, parent)
     {
-        node.ns_transformable = isIdentifierTransformable(node, parent);
+        node.nx_transformable = isIdentifierTransformable(node, parent);
     }
 
     traverser.traverse(function(node, parent) {
