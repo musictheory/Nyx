@@ -14,6 +14,7 @@ import fs     from "node:fs";
 import util   from "node:util";
 import vm     from "node:vm";
 import nyx    from "../lib/api.js";
+import { Parser } from "../src/ast/Parser.js";
 
 import { parse as acornParse } from "acorn";
 
@@ -145,6 +146,24 @@ function main()
     if (!files.length) {
         console.error("nyxdev: No input files specified");
         process.exit(1);
+    }
+
+    if (parsedArgs.values["dump-ast"] || parsedArgs.values["ast"]) {
+    
+        for (let f of files) {
+            let path = f.path;
+            let contents = f.contents;
+            
+            try {
+                let ast = Parser.parse(contents);
+                let string = JSON.stringify(ast, null, "    ");
+                console.log(`${path}: ${string}`);
+            } catch (e) {
+                console.error(`Error parsing '${path}': ${e}`);
+            }        
+        }
+
+        return;
     }
 
     let options = slurpOptions(files);
