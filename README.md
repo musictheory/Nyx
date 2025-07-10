@@ -164,8 +164,7 @@ function f2(x?: number): void {
 
 Nyx supports C-style enumerations via the `enum` keyword.
 
-When the first enum member is uninitialized, it is given a value of `0`.
-Subsequent uninitialized members are assigned an auto-incremented value.
+When the first enum member is uninitialized, it is given a value of `0`. Subsequent uninitialized members are assigned an auto-incremented value.
 
 ```typescript
 enum ExampleEnum {
