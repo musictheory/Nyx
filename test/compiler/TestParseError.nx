@@ -1,0 +1,8 @@
+// Test that the Compiler properly bubbles up Parse errors
+
+// @test: Compiler API: Reports parse errors
+// ============================================================================
+
+class !@#$ Foo { // @error
+
+}
