@@ -435,6 +435,22 @@ nxParseAtIdentifier()
 }
 
 
+nxParseHeritageClause(token)
+{
+    let originalStart = this.start;
+
+    let delimitedList = this.tsParseDelimitedList("HeritageClauseElement", () => {
+        return this.tsParseEntityName()
+    });
+
+    if (!delimitedList.length) {
+        this.raise(originalStart, `'${token}' list cannot be empty.`);
+    }
+
+    return delimitedList;
+}
+
+
 nxParseInterfaceDeclaration()
 {
     const state = this.saveState();
@@ -455,6 +471,10 @@ nxParseInterfaceDeclaration()
     this.strict = true;
       
     node.id = this.parseIdent();
+    
+    if (this.eat(tt._extends)) {
+        node.extends = this.nxParseHeritageClause("extends");
+    }
     
     let interfaceBody = this.startNode();
     interfaceBody.body = [ ];

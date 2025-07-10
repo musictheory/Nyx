@@ -1,0 +1,29 @@
+// @test: Issue 7
+// @typecheck
+// ============================================================================
+
+class Foo1 { foo1(): number { return 1; } }
+class Foo2 { foo2(): number { return 2; } }
+
+interface IFoo extends Foo1, Foo2 {
+    foo3(): number;
+}
+
+class Foo3 {
+    foo1(): number { return 1; }
+    foo2(): number { return 2; }
+    foo3(): number { return 3; }
+}
+
+function checkInterface(iFoo: IFoo): number
+{
+    return iFoo.foo1() + iFoo.foo2() + iFoo.foo3();
+}
+
+let f1 = new Foo1();
+let f2 = new Foo2();
+let f3 = new Foo3();
+assert.equal(checkInterface(f3), 6);
+
+checkInterface(f1); // @type
+checkInterface(f2); // @type

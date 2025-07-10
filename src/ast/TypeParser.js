@@ -93,6 +93,8 @@ tsIsListTerminator(kind)
     case "EnumMembers":
     case "TypeMembers":
         return this.type === tt.braceR;
+    case "HeritageClauseElement":
+        return this.type === tt.braceL;
     case "TupleElementTypes":
         return this.type === tt.bracketR;
     case "TypeParametersOrArguments":
