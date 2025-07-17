@@ -520,10 +520,9 @@ parseClassElement(constructorAllowsSuper)
     let isAsync    = eat("async");
     let isReadonly = eat("readonly");
     let isPrivate  = !isReadonly && eat("private");
-    let isObserved = !isReadonly && !isPrivate && eat("observed");
 
     let canBeProp = !isAsync;
-    let canBeFunc = !isPrivate && !isObserved;
+    let canBeFunc = !isPrivate;
 
     let atIdentifier = (this.type == tt.atId) ? this.nxParseAtIdentifier() : null;
     
@@ -537,11 +536,6 @@ parseClassElement(constructorAllowsSuper)
 
         if      (isPrivate)  modifier = "private";
         else if (isReadonly) modifier = "readonly";
-        else if (isObserved) modifier = "observed";
-
-        if (isObserved && !isLegacy) {
-            this.raise(this.pos, "'observed' cannot be used with 'prop', only 'legacy prop'");
-        }
 
         return this.nxParseProp(node, isStatic, modifier, atIdentifier, isLegacy);
 

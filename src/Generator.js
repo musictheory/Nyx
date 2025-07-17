@@ -671,7 +671,6 @@ generate()
 
         let isPrivate  = (node.modifier == "private");
         let isReadOnly = (node.modifier == "readonly");
-        let isObserved = (node.modifier == "observed");
         
         let wantsGetter =  !isPrivate;
         let wantsSetter = (!isPrivate && !isReadOnly);
@@ -699,20 +698,7 @@ generate()
         if (wantsSetter && !currentClass.hasSetter(name, isStatic)) {
             let s = [ ];
 
-            if (isObserved) {
-                s.push(`if (this.${backingName} !== arg) {`);
-            }
-
             s.push(`this.${backingName} = arg;`);
-
-            if (isObserved) {
-                let changeSymbol = "observePropertyChange";
-                
-                if (squeezer) changeSymbol = squeezer.squeeze(changeSymbol);
-                
-                s.push(`this.${changeSymbol}();`);
-                s.push(`}`);
-            }
 
             let argType = "";
 
@@ -759,12 +745,6 @@ generate()
 
         let isPrivate  = (node.modifier == "private");
         let isReadOnly = (node.modifier == "readonly");
-
-        // This goes away
-        if (node.modifier == "observed") {
-            throw new Error("'observed' cannot be used with 'prop', only 'legacy prop'"); 
-        }
-
 
         let isObserved = false;
         let observerArg = "";
