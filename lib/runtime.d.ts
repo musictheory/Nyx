@@ -10,12 +10,12 @@ declare function N$F_Maybe<T>(x: T): T | undefined;
 interface N$R_Runtime {
     g : N$G_Globals;
 
-    i: dispatchInit,
-    m: symbol,
-    n: symbol,
-    p: symbol,
+    i: (instance: any, symbol: symbol, initMethod: any, ...args: any) => void;
 
-    o: symbol
+    readonly m: unique symbol;
+    readonly n: unique symbol;
+    readonly p: unique symbol;
+    readonly o: unique symbol;
 }
 
 declare var N$$_: N$R_Runtime;

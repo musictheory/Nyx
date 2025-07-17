@@ -59,6 +59,7 @@ restoreState(state)
     Object.assign(this, state);
 }
 
+
 readToken(code)
 {
     if (isIdentifierStart(code, true) || code === 92 /* '\' */) {
