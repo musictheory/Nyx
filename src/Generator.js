@@ -753,7 +753,6 @@ generate()
     
         let name = node.key.name;
         let isStatic = node.static;
-        let type = TypePrinter.print(node.annotation);
 
         toSkip.add(node.key);
         toSkip.add(node.annotation);
@@ -790,7 +789,8 @@ generate()
             propertyName = squeezer.squeeze(propertyName);
             backingName  = squeezer.squeeze(backingName);
         }
-        
+
+        let typePlaceholder = null;
         
         let result = "";
         
@@ -798,7 +798,14 @@ generate()
         
         let annotation = "";
         if (language === LanguageTypechecker) {
-            annotation = `: ${type}`;
+        
+            if (node.annotation) {
+                let type = TypePrinter.print(node.annotation);
+                annotation = `: ${type}`;
+            } else if (node.value) {
+                typePlaceholder = SymbolUtils.getTypePlaceholder(propertyName, squeezer);
+                annotation = `: typeof this.${typePlaceholder}`;
+            }
         }
 
         if (wantsSetter && !currentClass.hasSetter(name, isStatic)) {
@@ -825,14 +832,27 @@ generate()
             result += `${staticString} get ${propertyName}() { return this.${backingName}; } `;
         }
 
-        result += `${staticString} ${backingName}${annotation}`;
+        if (typePlaceholder) {
+            result += `${staticString} ${typePlaceholder}`;
+        } else {
+            result += `${staticString} ${backingName}${annotation}`;
+        }
 
         if (node.value) {
             result += " = ";
             modifier.replace(node.start, node.value.start, result);
+
+            if (typePlaceholder) {
+                modifier.replace(
+                    node.value.end, node.end,
+                    `;${staticString} ${backingName}${annotation} = this.${typePlaceholder};`
+                );
+            }
+
         } else {
             modifier.replace(node, result);
         }
+        
     }
 
     function handleNXFuncDefinition(node)

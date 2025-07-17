@@ -70,6 +70,23 @@ function getImportIdentifier(name, squeezer)
 
 
 /*
+    getTypePlaceholder()
+
+    Used in generated TypeScript when a `prop` lacks an annotation.
+    See https://github.com/musictheory/Nyx/issues/10
+    
+    Input: "theProperty"
+    Output: "N$t_theProperty"
+*/
+function getTypePlaceholder(name, squeezer)
+{
+    let result = `N$t_${name}`;
+    if (squeezer) result = squeezer.squeeze(result);
+    return result;
+}
+
+
+/*
     toFuncName()
     
     Converts a basename + argument labels into a mangled name.
@@ -208,15 +225,14 @@ function symbolicate(string, squeezerOrSqueezed)
 
 export const SymbolUtils = {
     RootVariable,
-    FuncPrefix,
-    GlobalPrefix,
-    ImportPrefix,
 
     getGlobalExpression,
     getGlobalIdentifier,
 
     getImportExpression,
     getImportIdentifier,
+
+    getTypePlaceholder,
 
     toFuncIdentifier,
     fromFuncIdentifier,
