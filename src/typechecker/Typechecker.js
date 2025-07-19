@@ -76,15 +76,16 @@ constructor(parents, options)
     let tsLib    = options["typescript-lib"]    ?? "es2022";
     
     let tsOptions = {
-        noImplicitAny:        !!options["no-implicit-any"],
-        noImplicitReturns:    !!options["no-implicit-returns"],
+        noImplicitAny:        true,
+        noImplicitReturns:    true,
+        noImplicitThis:       true,
         
         strictNullChecks:     !!options["strict"],
-        strictBindCallApply:  !!options["strict"],
-        strictBuiltinIteratorReturn: !!options["strict"],
-        strictFunctionTypes:    !!options["strict"],
+        strictBindCallApply:  true,
+        strictBuiltinIteratorReturn: true,
+        strictFunctionTypes:    true,
     
-        allowUnreachableCode:  !options["no-unreachable-code"],
+        allowUnreachableCode:   true,
         target:                 tsTarget,
         lib:                    tsLib.split(","),
 

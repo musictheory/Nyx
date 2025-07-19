@@ -862,9 +862,6 @@ squeeze-builtins          | string[] | Array of builtins for squeezer
 check-types               | boolean  | If true, enable type checker
 defs                      | Array    | Additional typechecker definition files (same format as `files`)
 typescript-lib            | string   | Built-in type declarations (`tsc --lib`)
-no-implicit-any           | boolean  | Disallow implicit any (`tsc --noImplicitAny`)
-no-implicit-returns       | boolean  | Disallow implicit returns (`tsc --noImplicitReturns`)
-no-unreachable-code       | boolean  | Disallow unreachable code (inverse of `tsc --allowUnreachableCode`)
 
 Valid properties for each `file` or `defs` object:
 

@@ -63,9 +63,6 @@ const sPublicOptions = [
     "strict",                    // boolean
     "typescript-target",         // string
     "typescript-lib",            // string, specify alternate lib.d.ts file(s)
-    "no-implicit-any",           // boolean, disallow implicit any
-    "no-implicit-returns",       // boolean, disallow implicit returns
-    "no-unreachable-code",       // boolean, inverts tsc's "--allowUnreachableCode" option
 
     // Private / Development
     "dev-dump-tmp",              // boolean, dump debug info to /tmp
