@@ -634,7 +634,15 @@ generate()
 
     function handleFunctionDeclarationOrExpression(node)
     {
-        for (let param of node.params) {
+        let params = node.params;
+
+        // Remove "this" parameter when generating non-TypeScript
+        if ((language !== LanguageTypechecker) && (params[0]?.name == "this")) {
+            modifier.remove(params[0].start, params[1]?.start ?? params[0].end);
+            toSkip.add(params[0]);
+        }
+
+        for (let param of params) {
             checkRestrictedUsage(param);
         }
     }

@@ -1,0 +1,25 @@
+// @test: Issue 12
+// @typecheck
+// ============================================================================
+
+interface Foo {
+    alpha: string;
+    beta: string;
+}
+
+function extractAlpha(this: Foo)
+{
+    return this.alpha;
+}
+
+function extractAlphaOrBeta(this: Foo, useBeta: boolean)
+{
+    return useBeta ? this.beta : this.alpha;
+}
+
+let foo: Foo = { alpha: "alpha", beta: "beta" };
+
+assert.equal(extractAlpha.call(foo), "alpha");
+
+assert.equal(extractAlphaOrBeta.call(foo, false), "alpha");
+assert.equal(extractAlphaOrBeta.call(foo, true),  "beta");

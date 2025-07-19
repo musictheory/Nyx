@@ -74,7 +74,14 @@ readToken(code)
 
 parseBindingAtom()
 {
-    let result = super.parseBindingAtom();
+    let result;
+
+    // Allow 'this' as parameter name
+    if (this.type == tt._this) {
+        result = this.parseIdent(true);
+    } else {
+        result = super.parseBindingAtom();
+    }
 
     if (result.type == Syntax.Identifier) {
         if (this.type == tt.question && this.nxAllowOptionalIdent) {
