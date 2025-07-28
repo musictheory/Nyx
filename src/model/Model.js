@@ -4,9 +4,6 @@
     MIT license, http://www.opensource.org/licenses/mit-license.php
 */
 
-
-import _ from "lodash";
-
 import { CompilerIssue } from "./CompilerIssue.js";
 
 

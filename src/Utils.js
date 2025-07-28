@@ -4,7 +4,6 @@
     MIT license, http://www.opensource.org/licenses/mit-license.php
 */
 
-import _    from "lodash";
 import path from "node:path";
 import fs   from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -21,7 +20,7 @@ function enableLog()
 function log()
 {
     if (!sShouldLog) return;
-    console.log.apply(this, _.toArray(arguments));
+    console.log.apply(this, Array.from(arguments));
 }
 
 

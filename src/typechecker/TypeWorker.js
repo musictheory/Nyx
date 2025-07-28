@@ -6,7 +6,6 @@
     Calls the TypeScript compiler on Worker threads.
 */
 
-import _  from "lodash";
 import fs from "node:fs";
 import path from "node:path";
 
@@ -54,7 +53,7 @@ function serializeDiagnosticMessageChain(dmc)
         messageText: dmc.messageText,
         category: dmc.category,
         code: dmc.code,
-        next: _.map(dmc.next, child => serializeDiagnosticMessageChain(child))
+        next: dmc.next?.map(child => serializeDiagnosticMessageChain(child)) ?? null
     };
 }
 
@@ -74,7 +73,7 @@ function serializeDiagnostic(diagnostic)
     let reason = flattened.split("\n")[0];
     let chain;
     
-    if (_.isString(diagnostic.messageText)) {
+    if (typeof diagnostic.messageText == "string") {
         chain = {
             code:        diagnostic.code,
             category:    diagnostic.category,
@@ -200,10 +199,11 @@ async function typecheck(checkerID, entries, filesToCheck)
         );
     });
 
-    diagnostics = _.flattenDeep(diagnostics);
-    diagnostics = _.map(diagnostics, diagnostic => serializeDiagnostic(diagnostic));
-    diagnostics = _.filter(diagnostics);
-    
+    diagnostics = diagnostics
+        .flat(Infinity)
+        .map(diagnostic => serializeDiagnostic(diagnostic))
+        .filter(diagnostic => !!diagnostic);
+
     sFileMap  = null;
     sFilesToCheck = null;
 

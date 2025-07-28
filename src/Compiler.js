@@ -104,12 +104,12 @@ _checkOptions(options)
 {
     let allowPrivate = options["allow-private-options"];
 
-    _.each(options, (value, key) => {
+    for (let [key, value] of Object.entries(options)) {
         if (                sPublicOptionsSet.has( key)) return;
         if (allowPrivate && sPrivateOptionsSet.has(key)) return;
 
         throw new Error("Unknown Nyx option: " + key);
-    });
+    }
 }
 
 
@@ -135,10 +135,10 @@ _extractFilesFromOptions(optionsFiles, previousFiles)
     for (let f of optionsFiles) {
         let file, path, contents, time;
 
-        if (_.isString(f)) {
+        if (typeof f == "string") {
             path = f;
 
-        } else if (_.isObject(f)) {
+        } else if (typeof f?.path == "string") {
             path     = f.path;
             contents = f.contents;
             time     = f.time || Date.now();
@@ -525,7 +525,7 @@ async compile(options)
 
     function extractOptions(keys) {
         let extracted = { };
-        _.each(keys, key => { extracted[key] = extractOption(key); });
+        keys.forEach(key => { extracted[key] = extractOption(key); });
         return extracted;
     }
 
