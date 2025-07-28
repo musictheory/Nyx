@@ -533,18 +533,13 @@ parseClassElement(constructorAllowsSuper)
 
     let atIdentifier = (this.type == tt.atId) ? this.nxParseAtIdentifier() : null;
     
-    let isLegacy = false;
-    if (canBeProp && this.eatContextual("legacy")) {
-        isLegacy = true;
-    }
-
     if (canBeProp && this.eatContextual("prop")) {
         let modifier = null;
 
         if      (isPrivate)  modifier = "private";
         else if (isReadonly) modifier = "readonly";
 
-        return this.nxParseProp(node, isStatic, modifier, atIdentifier, isLegacy);
+        return this.nxParseProp(node, isStatic, modifier, atIdentifier);
 
     } else if (canBeFunc && this.eatContextual("func")) {
         return this.nxParseFunc(node, isStatic, isAsync, atIdentifier);
@@ -571,12 +566,11 @@ parseClassElement(constructorAllowsSuper)
 }
 
 
-nxParseProp(node, isStatic, modifier, observer, isLegacy)
+nxParseProp(node, isStatic, modifier, observer)
 {
     node.static = isStatic;
     node.modifier = modifier;
     node.observer = observer;
-    node.legacy = isLegacy;
     
     node.key = this.parseIdent(true);
     node.annotation = (this.type == tt.colon) ? this.tsParseTypeAnnotation() : null;

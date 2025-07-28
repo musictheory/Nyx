@@ -647,104 +647,8 @@ generate()
         }
     }
 
-    // This whole function goes away
-    function handleLegacyNXPropDefinition(node)
-    {
-        function getInit(typeName) {
-            let object = scopeManager.getType(typeName)?.object;
-
-            if (object && (object instanceof Model.Type)) {
-                return getInit(object.reference);
-
-            } else if (
-                typeName == "number" ||
-                (object && (object instanceof Model.Enum))
-            ) {
-                return "0";
-
-            } else if (typeName == "boolean") {
-                return "false";
-            }
-            
-            return "null";
-        }
-    
-        let name = node.key.name;
-        let isStatic = node.static;
-        let isLegacy = node.legacy;
-        let type = TypePrinter.print(node.annotation);
-
-        toSkip.add(node.key);
-        toSkip.add(node.annotation);
-
-        let isPrivate  = (node.modifier == "private");
-        let isReadOnly = (node.modifier == "readonly");
-        
-        let wantsGetter =  !isPrivate;
-        let wantsSetter = (!isPrivate && !isReadOnly);
-
-        let propertyName = name;
-        let backingName  = isLegacy ? `_${name}` : `#${name}`;
-        let legacySetterName   = isLegacy ? "set" + name[0].toUpperCase() + name.slice(1) : null;
-
-        if (squeezer) {
-            propertyName = squeezer.squeeze(propertyName);
-            backingName  = squeezer.squeeze(backingName);
-            legacySetterName   = legacySetterName ? squeezer.squeeze(legacySetterName) : null;
-        }
-        
-        
-        let result = "";
-        
-        let staticString = isStatic ? "static" : "";
-        
-        let annotation = "";
-        if (language === LanguageTypechecker) {
-            annotation = `: ${type}`;
-        }
-
-        if (wantsSetter && !currentClass.hasSetter(name, isStatic)) {
-            let s = [ ];
-
-            s.push(`this.${backingName} = arg;`);
-
-            let argType = "";
-
-            result += `${staticString} set ${propertyName}(arg${annotation}) {${s.join(" ")} } `;
-        }
-            
-        if (wantsSetter && legacySetterName) {
-            result += `${staticString} ${legacySetterName}(arg${annotation}) {this.${propertyName}=arg;} `; 
-        }
-
-        if (wantsGetter && !currentClass.hasGetter(name, isStatic)) {
-            result += `${staticString} get ${propertyName}() { return this.${backingName}; } `;
-        }
-
-        let initString = "";
-        if (isLegacy && !currentClass.hasField(`_${name}`, isStatic)) {
-            let annotationValue = node.annotation?.value;
-            let initValue = "null";
-
-            if (annotationValue?.type == Syntax.TSTypeReference) {
-                initValue = getInit(annotationValue.name.name);
-            }
-            
-            initString = ` = ${initValue};`;
-        }
-  
-        result += `${staticString} ${backingName}${annotation}${initString}`;
-
-        modifier.replace(node, result);
-    }
-
-
     function handleNXPropDefinition(node)
     {
-        if (node.legacy) {
-            return handleLegacyNXPropDefinition(node);
-        }
-    
         let name = node.key.name;
         let isStatic = node.static;
 
@@ -817,7 +721,7 @@ generate()
         }
             
         if (wantsGetter && !currentClass.hasGetter(name, isStatic)) {
-            result += `${staticString} get ${propertyName}() { return this.${backingName}; } `;
+            result += `${staticString} get ${propertyName}()${annotation} { return this.${backingName}; } `;
         }
 
         if (typePlaceholder) {
@@ -840,7 +744,6 @@ generate()
         } else {
             modifier.replace(node, result);
         }
-        
     }
 
     function handleNXFuncDefinition(node)

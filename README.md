@@ -752,12 +752,6 @@ let options = {
 
 ### Legacy Features
 
-`legacy prop`
-
-- Definitely goes away.
-- Generates underscore-prefixed field.
-- `observed` modifier
-
 `global function`
 - Should we keep this?
 - If we don't keep, should `global const` and the `global-consts` option be renamed to `global`/`globals`?

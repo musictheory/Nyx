@@ -267,10 +267,7 @@ build()
     {
         if (currentClass) {
             currentClass.hasFuncOrProp = true;
-            
-            if (!node.legacy) {
-                currentClass.addProp(node.key.name);
-            }
+            currentClass.addProp(node.key.name);
         }
     }
 
