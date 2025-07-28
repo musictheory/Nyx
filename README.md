@@ -402,7 +402,7 @@ class View {
     func init() { … }
     
     [ Nyx.postInitSymbol ]() {
-        this.buildSubviews();
+        this.initSubviews();
     }
     …
 }
@@ -411,7 +411,7 @@ class Button extends View {
     func init() { super.init(); … }
 
     // Will be called after Button.init and View.init runs
-    func buildSubviews(): void {
+    func initSubviews(): void {
         …  
     }
     …
