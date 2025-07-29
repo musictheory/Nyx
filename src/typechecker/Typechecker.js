@@ -76,25 +76,38 @@ constructor(parents, options)
     let tsLib    = options["typescript-lib"]    ?? "es2022";
     
     let tsOptions = {
-        noImplicitAny:        true,
-        noImplicitReturns:    true,
-        noImplicitThis:       true,
-        
-        strictNullChecks:     !!options["strict"],
-        strictBindCallApply:  true,
+        noImplicitAny: true,
+        noImplicitReturns: true,
+        noImplicitThis: true,
+        strictNullChecks: true,
+        strictBindCallApply: true,
         strictBuiltinIteratorReturn: true,
-        strictFunctionTypes:    true,
+        strictFunctionTypes: true,
+        useUnknownInCatchVariables: true,
+
+        // Conflicts with init-based initialization due to TypeScript's
+        // lack of control flow analysis. See Issue #59997
+        strictPropertyInitialization: false,
+
+        // Nyx may generate unreachable TypeScript code due to Target Tags
+        // or other features.
+        allowUnreachableCode: true
+    };
     
-        allowUnreachableCode:   true,
-        target:                 tsTarget,
-        lib:                    tsLib.split(","),
+    // Allow clients to override the above options
+    tsOptions = Object.assign(tsOptions, options["typescript-options"] ?? { });
+    
+    tsOptions = Object.assign(tsOptions, {
+        target: tsTarget,
+        lib:    tsLib.split(","),
 
         allowArbitraryExtensions: true,
         allowImportingTsExtensions: true,
         module: "bundler",
         moduleResolution: "bundler"
-    };
-    
+    });
+
+    // Internal options
     if (options["dev-fast-test"]) {
         tsOptions = { "dev-fast-test": true };
     }

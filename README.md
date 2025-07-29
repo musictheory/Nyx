@@ -841,21 +841,23 @@ Valid properties for the `options` object:
 
 Key                       | Type     | Description
 ------------------------- | -------- | ---
-files                     | Array    | Strings of paths to compile, or Objects of `file` type (see below)
+files                     | *        | Strings of paths to compile, or Objects of `file` type (see below)
 prepend                   | string   | Content to prepend, not compiled or typechecked
 append                    | string   | Content to append, not compiled or typechecked
 include-map               | boolean  | If true, include `map` key in results object
 source-map-file           | string   | Output source map file name
 source-map-root           | string   | Output source map root URL
-before-compile            | Function | Before-compile callback (see below)
-after-compile             | Function | After-compile callback (see below)
+before-compile            | *        | Before-compile callback (see below)
+after-compile             | *        | After-compile callback (see below)
 squeeze                   | boolean  | If true, enable squeezer
 squeeze-start-index       | number   | Start index for squeezer
 squeeze-end-index         | number   | End index for squeezer
 squeeze-builtins          | string[] | Array of builtins for squeezer
 check-types               | boolean  | If true, enable type checker
-defs                      | Array    | Additional typechecker definition files (same format as `files`)
-typescript-lib            | string   | Built-in type declarations (`tsc --lib`)
+defs                      | *        | Additional typechecker definition files (same format as `files`)
+typescript-target         | string   | Passed to TypeScript as `target`
+typescript-lib            | string   | Passed to TypeScript as `lib`
+typescript-options        | *        | See [TypeScript Options](#typeScript-options)
 
 Valid properties for each `file` or `defs` object:
 
@@ -871,8 +873,10 @@ Key     | Type    | Description
 ------- | ------- | ---
 code    | string  | Compiled JavaScript source code
 map     | string  | Source map (if `include-map` is true)
-squeeze | Object  | Map of squeezed identifiers to original identifiers.  See [Squeezing Properties](#squeezing-properties) below.
+squeezed | *  | Map of squeezed identifiers to original identifiers.  See [Squeezing Properties](#squeezing-properties)
 
+
+#### Before/After Compile Callbacks
 
 The `before-compile` key specifies a callback which is called prior to the compiler's Nyx&rarr;JavaScript stage.  This allows you to preprocess files.  The callback must return a Promise. Once the promise is resolved, a file's content must be valid Nyx or JavaScript.
 
@@ -913,6 +917,58 @@ options["after-compile"] = async file => {
     });
 };
 ```
+
+#### TypeScript Options
+
+The `typescript-target` and `typescript-lib` keys correspond to the [target](https://www.typescriptlang.org/tsconfig/#target) and [lib](https://www.typescriptlang.org/tsconfig/#lib) TypeScript options.
+
+`typescript-lib` may either be a string containing comma-separated library names (`"es2022,dom"`) or an array of strings (`[ "es2022", "dom" ]`).
+
+If not specified, `typescript-target` and `typescript-lib` default to `"es2022"`.
+
+Nyx takes an "as strict as possible" approach to type checking, with the following TypeScript options set by default: 
+
+```typescript
+{
+    noImplicitAny: true,
+    noImplicitReturns: true,
+    noImplicitThis: true,
+    strictNullChecks: true,
+    strictBindCallApply: true,
+    strictBuiltinIteratorReturn: true,
+    strictFunctionTypes: true,
+    useUnknownInCatchVariables: true,
+
+    // Conflicts with init-based initialization due to TypeScript's
+    // lack of control flow analysis. See TS Issue #59997
+    strictPropertyInitialization: false,
+
+    // Nyx may generate unreachable TypeScript code due to
+    // Target Tags or other features.
+    allowUnreachableCode: true
+}
+```
+
+While not recommended, you may override these by using the `typescript-options` key. This is considered a semi-unsupported feature that may break in future versions of Nyx.
+
+An example configuration using all of the above keys:
+
+```
+/* This code block is a Compiler API example. */
+
+options = {
+    "check-types": true,
+    "typescript-target": "es2024",
+    "typescript-lib": [ "es2024", "dom" ],
+    "typescript-options" = {
+        strictNullChecks: false,
+        useUnknownInCatchVariables: false
+    },
+    …
+}   
+```
+
+
 
 ### Additional Compiler API
 
@@ -1076,8 +1132,8 @@ We would use the following options:
 let nyx = require("nyx");
 
 let builtins = await nyx.generateBuiltins({
-    "typescript-target": "2022",
-    "typescript-lib": [ "2022", "dom" ],
+    "typescript-target": "es2022",
+    "typescript-lib": [ "es2022", "dom" ],
     "defs": [ "myProject/myDefs.d.ts" ],
     "unused-interfaces": [
         /^WebGL/, /^WEBGL/, /^OES_/, /^OVR_/, // WebGL

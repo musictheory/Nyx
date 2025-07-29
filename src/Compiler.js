@@ -60,9 +60,9 @@ const sPublicOptions = [
     // Typechecker options
     "check-types",               // boolean, enable type checker
     "defs",                      // string or Object, additional typechecker defs
-    "strict",                    // boolean
     "typescript-target",         // string
     "typescript-lib",            // string, specify alternate lib.d.ts file(s)
+    "typescript-options",        // Record<string, any> of TypeScript options
 
     // Private / Development
     "dev-dump-tmp",              // boolean, dump debug info to /tmp

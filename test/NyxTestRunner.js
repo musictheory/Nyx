@@ -223,7 +223,6 @@ class TestCase
         
         if (this.runTypechecker) {
             options["check-types"] = true;
-            options["strict"] = true;
         }
 
         // Add assert.d.ts to typescript-defs
