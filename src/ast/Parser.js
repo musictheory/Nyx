@@ -122,6 +122,19 @@ parseClassField(node)
 }
 
 
+parseMethod(isGenerator, isAsync, allowDirectSuper)
+{
+    let previousAllowOptionalIdent = this.nxAllowOptionalIdent;
+    this.nxAllowOptionalIdent = true;
+
+    let result = super.parseMethod(isGenerator, isAsync, allowDirectSuper);
+    
+    this.nxAllowOptionalIdent = previousAllowOptionalIdent
+
+    return result;
+}
+
+
 parseFunctionParams(node)
 {
     let previousAllowOptionalIdent = this.nxAllowOptionalIdent;

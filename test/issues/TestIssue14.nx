@@ -1,0 +1,26 @@
+// @test: Issue 14
+// @typecheck
+// ============================================================================
+
+class Foo {
+    bar(a?: string): void { }
+}
+
+let foo2 = {
+    bar(a?: string): void { }
+}
+
+interface IFoo {
+    bar(a?: string): void;
+}
+
+let foo1 = new Foo();
+foo1.bar("Hello");
+foo1.bar();
+
+foo2.bar("Hello");
+foo2.bar();
+
+let foo3 = (foo1 as IFoo);
+foo1.bar("Hello");
+foo1.bar();
