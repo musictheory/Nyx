@@ -192,16 +192,6 @@ _getGlobalDefinitions(model, squeezer)
     lines.push("declare class N$G_Globals {");
     
     for (let { name, params, annotation } of model.globalFunctions.values()) {
-        /*
-            Hack, right now global assert() is the only function in our sourcebase that needs
-            a type predicate
-        */
-        if (name == "assert") {
-            name = SymbolUtils.getGlobalIdentifier(name, squeezer);
-            lines.push(`${name}(condition: unknown, msg?: string): asserts condition;`);
-            continue;
-        }
-    
         name = SymbolUtils.getGlobalIdentifier(name, squeezer);
 
         let args = params.map(param => {
