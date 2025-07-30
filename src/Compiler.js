@@ -45,9 +45,9 @@ const sPublicOptions = [
     "before-compile",            // Function, callback to call per-file before the nyx->js compile
     "after-compile",             // Function, callback to call per-file after the nyx->js compile
 
-    //
+    // Language Features
     "interceptors",              // Record<string, Function>, string interceptor functions
-    "additional-inlines",        // Record<string, string|number|boolean>
+    "additional-inlines",        // Record<string, string|number|boolean|null>
     "observers",                 // Record<string, string|number>, prop observers
     "target-tags",               // Record<string, boolean>, target tags
 

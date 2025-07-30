@@ -847,8 +847,8 @@ append                    | string   | Content to append, not compiled or typech
 include-map               | boolean  | If true, include `map` key in results object
 source-map-file           | string   | Output source map file name
 source-map-root           | string   | Output source map root URL
-before-compile            | *        | Before-compile callback (see below)
-after-compile             | *        | After-compile callback (see below)
+before-compile            | *        | Before-compile callback ([see below](#beforeafter-compile-callbacks))
+after-compile             | *        | After-compile callback ([see below](#beforeafter-compile-callbacks))
 squeeze                   | boolean  | If true, enable squeezer
 squeeze-start-index       | number   | Start index for squeezer
 squeeze-end-index         | number   | End index for squeezer
@@ -857,7 +857,7 @@ check-types               | boolean  | If true, enable type checker
 defs                      | *        | Additional typechecker definition files (same format as `files`)
 typescript-target         | string   | Passed to TypeScript as `target`
 typescript-lib            | string   | Passed to TypeScript as `lib`
-typescript-options        | *        | See [TypeScript Options](#typeScript-options)
+typescript-options        | *        | See [TypeScript Options](#typescript-options)
 
 Valid properties for each `file` or `defs` object:
 
