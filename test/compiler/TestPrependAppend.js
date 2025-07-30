@@ -37,15 +37,18 @@ test.suite("Compiler API: prepend/append", () => {
     });
 
     test("allow null", async t => {
-        let options = {
-            "prepend": null,
-            "append":  null,
+        let options1 = {
             "files": [ { path: "1.nx", contents: "function moo() { }" } ]
         };
 
-        let result = await nyx.compile(options);
-        let code = result.code;
-        
-        assert.equal(code.indexOf("null"), -1);
+        let options2 = Object.assign({
+            "prepend": null,
+            "append":  null
+        }, options1);
+
+        let result1 = await nyx.compile(options1);
+        let result2 = await nyx.compile(options2);
+
+        assert.equal(result1.code, result2.code);
     });
 });
