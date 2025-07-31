@@ -266,6 +266,10 @@ build()
     function handleNXPropDefinition(node)
     {
         if (currentClass) {
+            if (node.static) {
+                throw new CompilerIssue("static cannot be used with prop.", node);
+            }
+            
             currentClass.hasFuncOrProp = true;
             currentClass.addProp(node.key.name);
         }

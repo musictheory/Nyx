@@ -16,7 +16,7 @@ enum AnotherReallyLongEnumName {
 
 class Foo {
     prop x = ReallyLongEnumName.Foo;
-    static prop y = AnotherReallyLongEnumName.Beta;
+    prop y = AnotherReallyLongEnumName.Beta;
 }
 
 
@@ -25,12 +25,12 @@ let f = new Foo();
 assert.equal(f.x, 0);
 assert.equal(f.x, ReallyLongEnumName.Foo);
 
-assert.equal(Foo.y, 5);
-assert.equal(Foo.y, AnotherReallyLongEnumName.Beta);
+assert.equal(f.y, 5);
+assert.equal(f.y, AnotherReallyLongEnumName.Beta);
 
 f.x = ReallyLongEnumName.Baz;
 f.x = "oops"; // @type
 
-Foo.y = AnotherReallyLongEnumName.Alpha;
-Foo.y = 7; // @type
+f.y = AnotherReallyLongEnumName.Alpha;
+f.y = 7; // @type
 

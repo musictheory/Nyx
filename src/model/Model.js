@@ -22,16 +22,15 @@ class Class {
         this._setters = new Set();
         this._fields  = new Set();
         this._props   = new Set();
-        this._ivars   = new Set();
         
         this._targetTags = new Set();
     }
 
     _key(name, isStatic) { return isStatic ? `static ${name}` : name; }
 
-    addProp(name) { this._props.add(name); this._ivars.add(`_${name}`); }
+    addProp(name) { this._props.add(name); }
     hasProp(name) { return this._props.has(name); }
-    hasIvar(name) { return this._ivars.has(name); }
+    getProps()    { return this._props; }
 
     addGetter(name, isStatic) { this._getters.add(this._key(name, isStatic)); }
     addSetter(name, isStatic) { this._setters.add(this._key(name, isStatic)); }

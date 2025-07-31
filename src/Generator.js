@@ -108,6 +108,9 @@ generate()
 
     let currentClass = null;
     let classStack = [ ];
+    
+    let currentIsStatic = null;
+    let isStaticStack = [ ];
 
     let warnings = [ ];
 
@@ -312,6 +315,9 @@ generate()
 
     function handleMethodDefinition(node)
     {
+        isStaticStack.push(currentIsStatic);
+        currentIsStatic = node.static;
+        
         if (language === LanguageTypechecker) {
             if (node.kind == "set" && node.value.annotation) {
                 modifier.remove(node.value.annotation);
@@ -514,9 +520,13 @@ generate()
             }
         }
 
-        // Ivars?
-        if (!replacement && (name[0] == "_") && currentClass?.hasIvar(name)) {
-            replacement = `this.#${name.slice(1)}`;
+        // Prop Shortcuts
+        if (!replacement && (name[0] == "_") && currentIsStatic === false && currentClass) {
+            let propName = name.slice(1);
+    
+            if (currentClass.hasProp(propName)) {
+                replacement = `this.#${propName}`;
+            }
         }
 
         // Inlines
@@ -750,7 +760,10 @@ generate()
     {
         let isStatic = node.static;
         let baseName = node.key.name;
-    
+
+        isStaticStack.push(currentIsStatic);
+        currentIsStatic = isStatic;
+
         if (node.targetTag) {
             let targetTagValue = targetTags.get(node.targetTag.name);
             
@@ -879,6 +892,8 @@ generate()
 
         if (type === Syntax.ClassDeclaration || type === Syntax.ClassExpression) {
             currentClass = classStack.pop();
+        } else if (type === Syntax.MethodDefinition || type === Syntax.NXFuncDefinition) {
+            currentIsStatic = isStaticStack.pop();
         }
     });
 

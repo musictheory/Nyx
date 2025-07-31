@@ -55,6 +55,50 @@ assert.throws(() => { foo.p = 157; });
 
 
 
+// @test: static prop is unsupported
+// ============================================================================
+
+class Foo {
+    static prop foo; // @error
+}
+
+
+// @test: shortcuts
+// ============================================================================
+
+let _foo = 0;
+
+class Foo {
+    prop foo;
+
+    // _foo shouldn't be a shortcut inside of a static func/method
+    static func staticFunc() { _foo = 1; }
+    static staticMethod() { _foo = 2; }
+
+    // _foo is a shortcut to this.#foo
+    func instanceFunc() { _foo = 3; }
+    instanceMethod() { _foo = 4; }
+
+    assertPoundFoo(value) { assert.equal(this.#foo, value); }
+}
+
+assert.equal(_foo, 0);
+Foo.staticFunc();
+assert.equal(_foo, 1);
+Foo.staticMethod();
+assert.equal(_foo, 2);
+
+let f = new Foo();
+f.instanceFunc();
+assert.equal(_foo, 2);
+assert.equal(f.foo, 3);
+f.assertPoundFoo(3);
+f.instanceMethod();
+assert.equal(_foo, 2);
+assert.equal(f.foo, 4);
+f.assertPoundFoo(4);
+
+
 // @test: Custom getter/setter
 // ============================================================================
 

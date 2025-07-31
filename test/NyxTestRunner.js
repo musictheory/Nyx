@@ -191,8 +191,6 @@ class TestCase
         }
 
         if (canRun) {
-            globalThis[Symbol.for("__N$$__")].r();
-            
             let script = new vm.Script(result.code, { filename: this.originalFileName } );
             let r = script.runInNewContext({ assert });
             
@@ -386,9 +384,6 @@ function gatherTestCases(dir)
     return testSuites;
 }
 
-
-// Add Nyx runtime to global scope
-eval(fs.readFileSync(Nyx.getRuntimePath()).toString());
 
 for (let testSuite of gatherTestCases(Utils.getProjectPath("test"))) {
     testSuite.run();
