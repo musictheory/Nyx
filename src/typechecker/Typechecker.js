@@ -73,7 +73,9 @@ constructor(parents, options)
     };
     
     let tsTarget = options["typescript-target"] ?? "es2022";
-    let tsLib    = options["typescript-lib"]    ?? "es2022";
+
+    let tsLib = options["typescript-lib"];
+    if (!tsLib.length) tsLib = [ "es2022" ];
     
     let tsOptions = {
         noImplicitAny: true,
@@ -99,7 +101,7 @@ constructor(parents, options)
     
     tsOptions = Object.assign(tsOptions, {
         target: tsTarget,
-        lib:    tsLib.split(","),
+        lib:    tsLib,
 
         allowArbitraryExtensions: true,
         allowImportingTsExtensions: true,

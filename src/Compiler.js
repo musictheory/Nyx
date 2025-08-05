@@ -5,7 +5,6 @@
 */
 
 
-import _    from "lodash";
 import fs   from "node:fs/promises";
 import path from "node:path";
 
@@ -22,6 +21,7 @@ import { Utils          } from "./Utils.js";
 import { CompileCallbackFile   } from "./model/CompileCallbackFile.js";
 import { CompilerFile          } from "./model/CompilerFile.js";
 import { CompilerIssue         } from "./model/CompilerIssue.js";
+import { CompilerOptions       } from "./model/CompilerOptions.js";
 import { Model                 } from "./model/Model.js";
 
 import { Typechecker           } from "./typechecker/Typechecker.js";
@@ -100,20 +100,7 @@ constructor()
 }
 
 
-_checkOptions(options)
-{
-    let allowPrivate = options["allow-private-options"];
-
-    for (let [key, value] of Object.entries(options)) {
-        if (                sPublicOptionsSet.has( key)) return;
-        if (allowPrivate && sPrivateOptionsSet.has(key)) return;
-
-        throw new Error("Unknown Nyx option: " + key);
-    }
-}
-
-
-_extractFilesFromOptions(optionsFiles, previousFiles)
+_makeFiles(optionsFiles, previousFiles)
 {
     let existingMap = new Map();
     let outFiles = [ ];
@@ -122,38 +109,11 @@ _extractFilesFromOptions(optionsFiles, previousFiles)
         existingMap.set(file.path, file);
     }
 
-    if (!Array.isArray(optionsFiles)) {
-        throw new Error("options.files must be an array");
-    }
+    for (let { path, contents, time } of optionsFiles) {
+        let file = existingMap.get(path) ?? new CompilerFile(path);
 
-    // The 'files' option can either be an Array of String file paths, or
-    // an Array of Objects with the following keys:
-    //        path: file path 
-    //    contents: file contents
-    //        time: file modification time
-    //
-    for (let f of optionsFiles) {
-        let file, path, contents, time;
-
-        if (typeof f == "string") {
-            path = f;
-
-        } else if (typeof f?.path == "string") {
-            path     = f.path;
-            contents = f.contents;
-            time     = f.time || Date.now();
-
-        } else {
-            throw new Error("Each member of options.files must be a string or object");
-        }
-
-        if (!path) {
-            throw new Error("No 'path' key in " + f);
-        }
-
-        file = existingMap.get(path) ?? new CompilerFile(path);
-
-        if (contents && time) {
+        if (contents) {
+            if (!time) time = Date.now();
             file.updateWithContentsAndTime(contents, time);
         } else {
             file.updateFromDisk();
@@ -505,56 +465,25 @@ async collectTypecheckerWarnings()
 }
 
 
-async compile(options)
+async compile(inOptions)
 {
     let previousFiles   = this._files;
     let previousDefs    = this._defs;
     let previousOptions = this._options;
     let previousModel   = this._model;
 
-    // Check options
-    this._checkOptions(options);
-
-    // Extract options which don't affect parse/build/compile stages
-    //
-    function extractOption(key) {
-        let result = options[key];
-        options[key] = null;
-        return result;
-    }
-
-    function extractOptions(keys) {
-        let extracted = { };
-        keys.forEach(key => { extracted[key] = extractOption(key); });
-        return extracted;
-    }
-
-    let optionsFiles          = extractOption("files");
-    let optionsDefs           = extractOption("defs");
+    let options = new CompilerOptions(inOptions);
 
     //!legacy: 'include-bridged' option goes away
-    let optionsIncludeBridged = extractOption("include-bridged");
+    let optionsIncludeBridged = options["include-bridged"];
 
-    if (extractOption("dev-print-log")) {
+    if (options["dev-print-log"]) {
         Utils.enableLog();
     }
 
-    let finishOptions = extractOptions([
-        "include-map",
-        "include-function-map",
-        "prepend",
-        "append",
-        "source-map-file",
-        "source-map-root",
-        "dev-omit-runtime"
-    ]);
-
     // Extract options.files and convert to a map of path->CompilerFiles
-    let files = this._extractFilesFromOptions(optionsFiles, previousFiles);
-    options.files = null;
-
-    let defs = optionsDefs ? this._extractFilesFromOptions(optionsDefs, previousDefs) : null;
-    options.defs = null;
+    let files = this._makeFiles(options["files"], previousFiles);
+    let defs  = this._makeFiles(options["defs"],  previousDefs);
 
     // These options aren't extracted
     let optionsCheckTypes     = options["check-types"];
@@ -562,10 +491,7 @@ async compile(options)
 
     // If remaining options changed, invalidate everything
     //
-    if (!_.isEqual(
-        _.filter(options,         value => !_.isFunction(value) ),
-        _.filter(previousOptions, value => !_.isFunction(value) )
-    )) {
+    if (!options.allowsIncrementalCompile(this._options)) {
         previousOptions = options;
         previousModel   = new Model();
 
@@ -587,6 +513,8 @@ async compile(options)
         if (parent._model)    parentModels.push(parent._model);
         if (parent._squeezer) parentSqueezers.push(parent._squeezer);
         if (parent._checker)  parentCheckers.push(parent._checker);
+        
+        options.assertParentCompatibility(parent._options);
     }
 
     if (optionsCheckTypes && !this._checker) {
@@ -599,9 +527,9 @@ async compile(options)
     if (options["squeeze"]) {
         squeezer = new Squeezer(
             parentSqueezers,
-            options["squeeze-start-index"] || 0,
-            options["squeeze-end-index"]   || 0,
-            options["squeeze-builtins"]    || [ ]
+            options["squeeze-start-index"],
+            options["squeeze-end-index"],
+            options["squeeze-builtins"]
         );
     }
     
@@ -666,7 +594,7 @@ async compile(options)
 
         // Concatenate and map output
         if (optionsOutputLanguage != "none") {
-            let results = await this._finish(files, finishOptions);
+            let results = await this._finish(files, options);
 
             if (results) {
                 outputCode        = results.code;

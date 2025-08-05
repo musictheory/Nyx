@@ -26,28 +26,30 @@ const sCountMap = new Map();
 
 export class Squeezer {
 
-constructor(parents, start, max, builtins)
+constructor(parents, start, max, inBuiltins)
 {
     this._id       = start;
     this._maxId    = max;
-    this._builtins = new Set(builtins ?? [ ]);
     this._toMap    = new Map();            // key: symbol, value: squeezed symbol
     this._fromMap  = new Map();            // key: squeezed symbol, value: symbol
 
+    let builtins = new Set();
+
     // Never squeeze "init", as it is called by runtime.js
-    this._builtins.add("init");
+    builtins.add("init");
+    builtins = builtins.union(inBuiltins);
 
     if (parents) {
-        parents.forEach(parent => this._inherit(parent));
-    }
-}
+        for (let parent of parents) {
+            for (let [ key, value ] of parent._toMap) {
+                this._addPair(key, value);
+            }
 
-
-_inherit(parent)
-{
-    for (let [ key, value ] of parent._toMap) {
-        this._addPair(key, value);
+            builtins = builtins.union(parent._builtins);
+        }
     }
+
+    this._builtins = builtins;
 }
 
 

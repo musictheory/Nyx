@@ -706,7 +706,7 @@ let foo2 = Foo ? new Foo() : null;
 
 Nyx supports globals via the `global` keyword. A global may be used in any file without the use of `import`.
 
-A globals must be a constant string or number and is inlined at compile time.
+A global must be a constant `string`, `number`, `boolean`, or `null`. It's value is inlined at compile time.
 
 For example:
 
@@ -736,14 +736,14 @@ assert("Foo" == "Foo");
 assert(42 == 42);
 ```
 
-Globals may also be defined via compiler options:
+Globals may also be defined via the `additional-globals` compiler option:
 
 ```javascript
 /* This code block is a Compiler API example. */
 
 let options = {
     …,
-    "global-consts": {
+    "additional-globals": {
         "FOO_GLOBAL": "Foo",
         "BAR_GLOBAL": 42
     }
@@ -839,40 +839,44 @@ Below is a list of supported properties for `options` and `results`.
 
 Valid properties for the `options` object:
 
-Key                       | Type     | Description
+Key                       | Type(s)     | Description
 ------------------------- | -------- | ---
-files                     | *        | Strings of paths to compile, or Objects of `file` type (see below)
-prepend                   | string   | Content to prepend, not compiled or typechecked
-append                    | string   | Content to append, not compiled or typechecked
-include-map               | boolean  | If true, include `map` key in results object
-source-map-file           | string   | Output source map file name
-source-map-root           | string   | Output source map root URL
+files                     | `string[]` or `File[]` | Strings of paths to compile, or Objects of `File` type (see below)
+prepend                   | `string`   | Content to prepend, not compiled or typechecked
+append                    | `string`   | Content to append, not compiled or typechecked
+include-map               | `boolean`  | If true, include `map` key in results object
+source-map-file           | `string`   | Output source map file name
+source-map-root           | `string`   | Output source map root URL
 before-compile            | *        | Before-compile callback ([see below](#beforeafter-compile-callbacks))
 after-compile             | *        | After-compile callback ([see below](#beforeafter-compile-callbacks))
-squeeze                   | boolean  | If true, enable squeezer
-squeeze-start-index       | number   | Start index for squeezer
-squeeze-end-index         | number   | End index for squeezer
-squeeze-builtins          | string[] | Array of builtins for squeezer
-check-types               | boolean  | If true, enable type checker
-defs                      | *        | Additional typechecker definition files (same format as `files`)
-typescript-target         | string   | Passed to TypeScript as `target`
-typescript-lib            | string   | Passed to TypeScript as `lib`
+interceptors | `Record` or `Map` | String interceptor functions. See [String Interceptors](#string-interceptors).
+additional-globals | `Record` or `Map` | Additional globals. See [Globals](#globals).
+observers | `Record` or `Map` | Observers. Values must be a `number` or `string`
+target-tags | `Record` or `Map` | Target Tags. Values must be a `boolean`.
+squeeze                   | `boolean`  | If true, enable squeezer
+squeeze-start-index       | `number`   | Start index for squeezer
+squeeze-end-index         | `number`   | End index for squeezer
+squeeze-builtins          | `string[]` or `Set<string>` | Array or Set of builtins for squeezer
+check-types               | `boolean`  | If true, enable type checker
+defs                      | `string[]` or `File[]`        | Additional typechecker definition files (same format as `files`)
+typescript-target         | `string`   | Passed to TypeScript as `target`
+typescript-lib            | `string` or `string[]`   | Passed to TypeScript as `lib`
 typescript-options        | *        | See [TypeScript Options](#typescript-options)
 
 Valid properties for each `file` or `defs` object:
 
 Key      | Type    | Description
 -------- | ------- | ---
-path     | string  | Path of file     
-contents | string  | Content of file                                                  |     
-time     | number  | Modification time of the file (ms since 1970)                    |
+path     | `string`  | Path of file     
+contents | `string`  | Content of file                                                  |     
+time     | `number`  | Modification time of the file (ms since 1970)                    |
 
 Properties for the `results` object:
 
 Key     | Type    | Description
 ------- | ------- | ---
-code    | string  | Compiled JavaScript source code
-map     | string  | Source map (if `include-map` is true)
+code    | `string`  | Compiled JavaScript source code
+map     | `string`  | Source map (if `include-map` is true)
 squeezed | *  | Map of squeezed identifiers to original identifiers.  See [Squeezing Properties](#squeezing-properties)
 
 

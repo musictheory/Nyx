@@ -22,7 +22,6 @@
     "devDependencies": { },
     "dependencies": {
         "acorn":       "8.x",
-        "lodash":      "4.x",
         "source-map":  "0.5.x",
         "typescript":  "5.8.x"
     },

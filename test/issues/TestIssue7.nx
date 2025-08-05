@@ -25,5 +25,7 @@ let f2 = new Foo2();
 let f3 = new Foo3();
 assert.equal(checkInterface(f3), 6);
 
-checkInterface(f1); // @type
-checkInterface(f2); // @type
+function dontActuallyRun() {
+    checkInterface(f1); // @type
+    checkInterface(f2); // @type
+}

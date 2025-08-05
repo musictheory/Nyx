@@ -35,7 +35,6 @@ constructor(file, model, squeezer, options)
     this._options  = options;
 
     let inlines = new Map();
-    let interceptors = new Map();
     let targetTags = new Map();
 
     let language = options["output-language"];
@@ -54,37 +53,13 @@ constructor(file, model, squeezer, options)
     }
 
     let additionalInlines = options["additional-inlines"];
-    if (additionalInlines) {
-        for (let key in additionalInlines) {
-            if (additionalInlines.hasOwnProperty(key)) {
-                inlines.set(key, JSON.stringify(additionalInlines[key]));
-            }
-        }
+    for (let [ key, value ] of additionalInlines.entries()) {
+        inlines.set(key, JSON.stringify(value));
     }
 
-    let inInterceptors = options["interceptors"];
-    if (inInterceptors) {
-        for (let key of Object.keys(inInterceptors)) {
-            let value = inInterceptors[key];
-            if (typeof value == "function") {
-                interceptors.set(key, value);
-            }
-        }
-    }
-
-    let inTargetTags = options["target-tags"];
-    if (inTargetTags) {
-        for (let key of Object.keys(inTargetTags)) {
-            let value = inTargetTags[key];
-            if (value === true || value === false) {
-                targetTags.set(key, value);
-            }
-        }
-    }
-    
-    this._interceptors = interceptors;
     this._inlines = inlines;
-    this._targetTags = targetTags;
+    this._interceptors = options["interceptors"];
+    this._targetTags   = options["target-tags"];
 }
 
 
@@ -671,7 +646,7 @@ generate()
         let isObserved = false;
         let observerArg = "";
         if (node.observer) {
-            observerArg = options["observers"]?.[node.observer.name];
+            observerArg = options["observers"].get(node.observer.name);
 
             if (observerArg === undefined) {
                 throw new CompilerIssue(`Unknown observer: @${node.observer.name}`, node);
