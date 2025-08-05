@@ -706,7 +706,7 @@ let foo2 = Foo ? new Foo() : null;
 
 Nyx supports globals via the `global` keyword. A global may be used in any file without the use of `import`.
 
-A global must be a constant `string`, `number`, `boolean`, or `null`. It's value is inlined at compile time.
+A global must be a constant `string`, `number`, `boolean`, or `null`. Its value is inlined at compile time.
 
 For example:
 
