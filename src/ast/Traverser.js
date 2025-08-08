@@ -37,7 +37,9 @@ _traverse(node, parent)
         let child = node[key];
 
         if (Array.isArray(child)) {
-            child.forEach(child => this._traverse(child, node));
+            for (let c of child) {
+                if (c) this._traverse(c, node);
+            }
 
         } else if (child) {
             this._traverse(child, node);
