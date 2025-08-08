@@ -27,7 +27,6 @@ let sDidRemoveDebugDirectory = false;
 
 const DefsSuffix = "defs.d.ts";
 
-const GlobalDefsPrefix = `N$-global`;
 const RuntimeDefsKey   = `N$-runtime${path.sep}${DefsSuffix}`;
 
 
@@ -68,7 +67,7 @@ constructor(parents, options)
 
     this._generatorOptions = {
         "output-language": "typechecker",
-        "additional-inlines": options["additional-inlines"],
+        "additional-globals": options["additional-globals"],
         "observers": options["observers"]
     };
     
@@ -187,43 +186,14 @@ _updateEntry(previous, inVersion, callback)
 }
 
 
-_getGlobalDefinitions(model, squeezer)
-{
-    let lines = [ ];
-
-    lines.push("declare class N$G_Globals {");
-    
-    for (let { name, params, annotation } of model.globalFunctions.values()) {
-        name = SymbolUtils.getGlobalIdentifier(name, squeezer);
-
-        let args = params.map(param => {
-            let optional = param.optional ? "?" : "";
-            return `${param.name}${optional}: ${param.annotation}`;
-        }).join(",");
-
-        lines.push(`${name}(${args}): ${annotation};`);
-    }
-
-    lines.push("}");
-
-    return lines.join("\n");
-}
-
-
 _updateDefs(inModel, inSqueezer, inDefs, inFiles)
 {
     let previousDefsMap = this._defsMap;
     let defsMap = new Map();
     
     for (let parent of this._parents) {
-        // Our call to getGlobalDefinitions() will include globals inherited
-        // from parent Models - we need to filter out the parent defs file to avoid
-        // duplicates.
-        //
         for (let [ key, value ] of parent._defsMap) {
-            if (!key.startsWith(GlobalDefsPrefix)) {
-                defsMap.set(key, value);
-            }
+            defsMap.set(key, value);
         }
     }
 
@@ -236,23 +206,6 @@ _updateDefs(inModel, inSqueezer, inDefs, inFiles)
             version: inFile.generatedVersion,
             original: inFile.path
         });
-    }
-    
-    // Make entry for globals
-    {
-        // Each global definition needs to have a unique name, else the
-        // TypeScript cache may use the wrong one
-        //
-        let defsKey = `${GlobalDefsPrefix}.${this._checkerID}${path.sep}${DefsSuffix}`;
-        
-        let previous = previousDefsMap.get(defsKey);
-        if (!previous) previous = { file: defsKey };
-        
-        let globalDefs = this._getGlobalDefinitions(inModel, inSqueezer);
-        
-        // NaN forces the callback block to always run
-        //
-        defsMap.set(defsKey, this._updateEntry(previous, NaN, () => globalDefs));
     }
 
     // Make entry for runtime.d.ts
@@ -279,10 +232,6 @@ _updateCode(inModel, inSqueezer, inFiles)
     let codeMap = new Map();
 
     for (let parent of this._parents) {
-        // Our call to getGlobalDefinitions() will include globals inherited
-        // from parent Models - we need to filter out the parent defs file to avoid
-        // duplicates.
-        //
         for (let [ key, value ] of parent._codeMap) {
             let clonedValue = structuredClone(value);
             clonedValue.workerIndex = NaN;

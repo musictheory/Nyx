@@ -12,7 +12,6 @@ test.suite("Compiler API: symbolicate()", () => {
         for (let [ input, expected ] of [
             [ "N$f_$_foo_bar",  "_foo(bar:)"   ],
             [ "N$f_$_foo__bar", "_foo(_:bar:)" ],
-            [ "N$g_TheGlobal",  "TheGlobal"    ],
             [ "N$i_TheImport",  "TheImport"    ],
             [
                 "Hello N$f_$_foo__bar and N$f_$_foo__baz",

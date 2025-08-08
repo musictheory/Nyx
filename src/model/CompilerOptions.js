@@ -39,7 +39,7 @@ for (let [ key, value ] of Object.entries({
 
     // Language Features 
     "interceptors":              { v: vInterceptors      }, // Record<string, Function>, string interceptor functions
-    "additional-inlines":        { v: vAdditionalInlines }, // Record<string, string|number|boolean|null>
+    "additional-globals":        { v: vAdditionalGlobals }, // Record<string, string|number|boolean|null>
     "observers":                 { v: vObservers         }, // Record<string, string|number>, prop observers
     "target-tags":               { v: vTargetTags        }, // Record<string, boolean>, target tags
 
@@ -269,11 +269,11 @@ function vInterceptors(key, value)
 
 // Validator for "additional-inlines"
 //
-function vAdditionalInlines(key, value)
+function vAdditionalGlobals(key, value)
 {
     return vObjectOrMap(key, value, (key, value) => {
         if (!isType(value, [ "boolean", "null", "number", "string" ])) {
-            throw new Error(`Additional Inline '${key}' must be a boolean, null, number, or string.`);
+            throw new Error(`Additional Global '${key}' must be a boolean, null, number, or string.`);
         }
 
         return value;

@@ -6,27 +6,40 @@
 // @file: 1.nx
 // ----------------------------------------------------------------------------
 
-global const NumberConst = 42;
-global const NegativeNumberConst = -42;
-global const StringConst = "Foo";
-global const BooleanConst = true;
+global GlobalNumber = 42;
+global GlobalNegativeNumber = -42;
+global GlobalString1 = "Foo", GlobalString2 = "Bar", GlobalString3 = "Baz";
+global GlobalBoolean = true;
+global GlobalNull = null;
 
-global function FooFunction(a: number): number {
-    return a + 42;
-}
 
 // @file: 2.nx
 // ----------------------------------------------------------------------------
 
-assert.equal(NumberConst, 42);
-assert.equal(NegativeNumberConst, -42);
-assert.equal(StringConst, "Foo");
-assert.equal(BooleanConst, true);
+assert.strictEqual(GlobalNumber, 42);
+assert.strictEqual(GlobalNegativeNumber, -42);
+assert.strictEqual(GlobalString1, "Foo");
+assert.strictEqual(GlobalString2, "Bar");
+assert.strictEqual(GlobalString3, "Baz");
+assert.strictEqual(GlobalBoolean, true);
+assert.strictEqual(GlobalNull, null);
 
-assert.equal(FooFunction(42), 84);
 
 
-// @test: Must be constant
+// @test: Must have an initializer
 // ============================================================================
 
-global const ErrorConst = new Error("Foo"); // @error;
+global ErrorConst; // @error;
+
+
+// @test: Must be a literal
+// ============================================================================
+
+global ErrorConst = new Error("Foo"); // @error;
+
+
+
+// @test: Must not be a keyword
+// ============================================================================
+
+global void = null; // @error;

@@ -63,7 +63,7 @@ class Enum {
 
 }
 
-class GlobalConst {
+class Global {
 
     constructor(location, name, value, raw)
     {
@@ -72,24 +72,6 @@ class GlobalConst {
         this.value    = value;
         this.raw      = raw;
     }
-}
-
-
-class GlobalFunction {
-
-    constructor(location, name, annotation)
-    {
-        this.location = location;
-        this.name = name;
-        this.params = [ ];
-        this.annotation = annotation ?? null;
-    }
-    
-    addParameter(name, optional, annotation)
-    {
-        this.params.push({ name, optional, annotation });    
-    }
-
 }
 
 
@@ -122,17 +104,15 @@ class Value {
 
 export class Model {
 
-static Class = Class;
-static Enum  = Enum;
-static GlobalConst = GlobalConst;
-static GlobalFunction = GlobalFunction;
+static Class   = Class;
+static Enum    = Enum;
+static Global  = Global;
 static Runtime = Runtime;
 static Type    = Type;
 static Value   = Value;
 
 _objects = new Map();
-globalConsts  = new Map();
-globalFunctions = new Map();
+globals  = new Map();
 
 
 constructor(parents)
@@ -153,9 +133,8 @@ _inherit(parent)
         }
     }
     
-    extend( this.globalConsts,    parent.globalConsts );
-    extend( this.globalFunctions, parent.globalFunctions);
-    extend( this._objects,        parent._objects);
+    extend( this.globals,  parent.globals );
+    extend( this._objects, parent._objects);
 }
 
 //!legacy: 'include-bridge' option goes away
@@ -164,7 +143,7 @@ saveBridged()
 {
     let consts = [ ], enums = [ ];
 
-    for (let { name, value } of this.globalConsts.values()) {
+    for (let { name, value } of this.globals.values()) {
         consts.push({ name, value });
     }
 
@@ -243,10 +222,8 @@ add(object)
 
     this._objects.set(name, object);
     
-    if (object instanceof GlobalFunction) {
-        this.globalFunctions.set(name, object);
-    } else if (object instanceof GlobalConst) {
-        this.globalConsts.set(name, object);
+    if (object instanceof Global) {
+        this.globals.set(name, object);
     }
 }
 

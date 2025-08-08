@@ -387,25 +387,30 @@ nxMaybeParseGlobalDefinition()
     const state = this.saveState();
     
     const node = this.startNode();
-    const params = [];
+    const declarations = [];
 
     this.eatContextual("global");
 
-    if (this.type != tt._function && this.type != tt._const) {
+    if (this.type != tt.name) {
         this.restoreState(state);
         return null;
     }
-
-    if (this.type == tt._function) {
-
-        const functionNode = this.startNode();
-        this.next();
-        node.declaration = this.parseFunction(functionNode, true);
     
-    } else if (this.type == tt._const) {
-        const constNode = this.startNode();
-        node.declaration = this.parseVarStatement(constNode, "const");
+    for (;;) {
+        let decl = this.startNode()
+        decl.id = this.parseIdent();
+        if (this.eat(tt.eq)) {
+            decl.init = this.parseMaybeAssign();
+        } else {
+            this.raise(this.lastTokEnd, "Missing initializer in global declaration");
+        }
+        declarations.push(this.finishNode(decl, "VariableDeclarator"))
+        if (!this.eat(tt.comma)) break
     }
+
+    node.declarations = declarations;
+
+    this.semicolon();
 
     return this.finishNode(node, Syntax.NXGlobalDeclaration);
 }

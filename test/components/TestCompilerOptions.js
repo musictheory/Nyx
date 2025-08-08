@@ -64,12 +64,12 @@ test("CompilerOptions", t => {
         assert.throws(() => { testOption("interceptors", invalidMap, null); });
     }
 
-    testOption("additional-inlines", null, new Map());
-    testOption("additional-inlines", { }, new Map());
-    testOption("additional-inlines", { "Moo": 42    }, makeMap({ "Moo": 42 }));
-    testOption("additional-inlines", { "Moo": null  }, makeMap({ "Moo": null }));
-    testOption("additional-inlines", makeMap({ "Moo": "Moo", "Foo": "Bar" }), makeMap({ "Moo": "Moo", "Foo": "Bar" }));
-    assert.throws(() => { testOption("additional-inlines", { "Moo": { } }, null); });
+    testOption("additional-globals", null, new Map());
+    testOption("additional-globals", { }, new Map());
+    testOption("additional-globals", { "Moo": 42    }, makeMap({ "Moo": 42 }));
+    testOption("additional-globals", { "Moo": null  }, makeMap({ "Moo": null }));
+    testOption("additional-globals", makeMap({ "Moo": "Moo", "Foo": "Bar" }), makeMap({ "Moo": "Moo", "Foo": "Bar" }));
+    assert.throws(() => { testOption("additional-globals", { "Moo": { } }, null); });
 
     testOption("observers", null, new Map());
     testOption("observers", { "moo": 42    }, makeMap({ "moo": 42 }));

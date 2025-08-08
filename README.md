@@ -712,10 +712,10 @@ For example:
 
 ```typescript
 // Foo.nx
-global const FOO_GLOBAL = "Foo";
+global FOO_GLOBAL = "Foo";
 
 // Bar.nx
-global const BAR_GLOBAL = 42;
+global BAR_GLOBAL = 42;
 
 // Baz.nx
 assert(FOO_GLOBAL == "Foo");
@@ -749,13 +749,6 @@ let options = {
     }
 };
 ```
-
-### Legacy Features
-
-`global function`
-- Should we keep this?
-- If we don't keep, should `global const` and the `global-consts` option be renamed to `global`/`globals`?
-
 
 ## Runtime API
 

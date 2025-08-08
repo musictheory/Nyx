@@ -46,14 +46,14 @@ constructor(file, model, squeezer, options)
         this._language = LanguageEcmascript;
     }
 
-    for (let { name, raw } of model.globalConsts.values()) {
+    for (let { name, raw } of model.globals.values()) {
         if (!inlines.has(name)) {
             inlines.set(name, raw);
         }
     }
 
-    let additionalInlines = options["additional-inlines"];
-    for (let [ key, value ] of additionalInlines.entries()) {
+    let additionalGlobals = options["additional-globals"];
+    for (let [ key, value ] of additionalGlobals.entries()) {
         inlines.set(key, JSON.stringify(value));
     }
 
@@ -95,7 +95,7 @@ generate()
 
         if (!node.nx_transformable) return;
 
-        if (inlines.has(name) || model.globalFunctions.has(name)) {
+        if (inlines.has(name)) {
             throw new CompilerIssue(`Cannot use compiler-inlined "${name}" here`, node);
         }
     }
@@ -477,11 +477,6 @@ generate()
         ) {
             if (squeezer) replacement = squeezer.squeeze(name);
         }
-
-        // Globals
-        if (!replacement && model.globalFunctions.has(name)) {
-            replacement = SymbolUtils.getGlobalExpression(name, squeezer);
-        }
         
         // Imports
         if (!replacement) {
@@ -602,19 +597,8 @@ generate()
     {
         let declaration = node.declaration;
 
-        if (declaration.type == Syntax.FunctionDeclaration) {
-
-            let replacement = SymbolUtils.getGlobalExpression(declaration.id.name, squeezer) + "=";
-
-            modifier.replace(node.start, declaration.start, replacement);
-            modifier.remove(declaration.id);
-
-            toSkip.add(declaration.id);
-
-        } else {
-            modifier.remove(node);
-            toSkip.add(declaration);
-        }
+        modifier.remove(node);
+        toSkip.add(declaration);
     }
 
     function handleFunctionDeclarationOrExpression(node)
@@ -664,7 +648,6 @@ generate()
 
         if (squeezer) {
             propertyName = squeezer.squeeze(propertyName);
-            backingName  = squeezer.squeeze(backingName);
         }
 
         let typePlaceholder = null;

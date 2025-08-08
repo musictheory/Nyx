@@ -10,36 +10,7 @@
 const RootVariable = "N$$_";
 
 const FuncPrefix   = "N$f_";
-const GlobalPrefix = "N$g_";
 const ImportPrefix = "N$i_";
-
-
-
-/*
-    getGlobalExpression()
-    
-    Input: "GlobalFunction"
-    Output: "N$$_.g.N$g_GlobalFunction"
-*/
-function getGlobalExpression(name, squeezer)
-{
-    let identifier = getGlobalIdentifier(name, squeezer);
-    return `${RootVariable}.g.${identifier}`;
-}
-
-
-/*
-    getGlobalIdentifier()
-    
-    Input: "GlobalFunction"
-    Output: "N$g_GlobalFunction"
-*/
-function getGlobalIdentifier(name, squeezer)
-{
-    let result = `${GlobalPrefix}${name}`;
-    if (squeezer) result = squeezer.squeeze(result);
-    return result;
-}
 
 
 /*
@@ -210,9 +181,6 @@ function symbolicate(string, squeezerOrSqueezed)
                 return toFuncString(components);
             }
 
-        } else if (match.startsWith(GlobalPrefix)) {
-            return match.substring(4);
-
         } else if (match.startsWith(ImportPrefix)) {
             return match.substring(4);
 
@@ -225,9 +193,6 @@ function symbolicate(string, squeezerOrSqueezed)
 
 export const SymbolUtils = {
     RootVariable,
-
-    getGlobalExpression,
-    getGlobalIdentifier,
 
     getImportExpression,
     getImportIdentifier,

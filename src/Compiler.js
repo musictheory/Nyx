@@ -47,7 +47,7 @@ const sPublicOptions = [
 
     // Language Features
     "interceptors",              // Record<string, Function>, string interceptor functions
-    "additional-inlines",        // Record<string, string|number|boolean|null>
+    "additional-globals",        // Record<string, string|number|boolean|null>
     "observers",                 // Record<string, string|number>, prop observers
     "target-tags",               // Record<string, boolean>, target tags
 

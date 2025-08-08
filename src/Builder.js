@@ -392,50 +392,27 @@ build()
 
     function handleNXGlobalDeclaration(node)
     {
-        let declaration = node.declaration;
+        for (let declarator of node.declarations) {
+            let name = declarator.id.name;
+            let init = declarator.init;
+            let raw, value;
 
-        if (declaration.type == Syntax.FunctionDeclaration) {
-            let name = declaration.id.name;
-            let annotation = TypePrinter.print(declaration.annotation);
+            if (init.type === Syntax.Literal) {
+                value = init.value;
+                raw   = init.raw;
 
-            let globalFunction = new Model.GlobalFunction(makeLocation(declaration), name, annotation);
+            } else if (
+                init.type === Syntax.UnaryExpression &&
+                (typeof init.argument.value == "number")
+            ) {
+                value = -init.argument.value;
+                raw   = JSON.stringify(value);
 
-            for (let param of declaration.params) {
-                if (param.type != Syntax.Identifier) {
-                    throw new CompilerIssue("'global' functions may only use simple parameter lists", param);
-                }
-                
-                let paramAnnotation = TypePrinter.print(param.annotation);
-                
-                globalFunction.addParameter(param.name, !!param.optional, paramAnnotation);
-            }            
-
-            modelObjects.push(globalFunction);
-
-        } else if (declaration.type == Syntax.VariableDeclaration) {
-            for (let declarator of declaration.declarations) {
-                let init = declarator.init;
-                let raw, value;
-
-                if (init.type === Syntax.Literal) {
-                    value = init.value;
-                    raw   = init.raw;
-
-                } else if (
-                    init.type === Syntax.UnaryExpression &&
-                    (typeof init.argument.value == "number")
-                ) {
-                    value = -init.argument.value;
-                    raw   = JSON.stringify(value);
-
-                } else {
-                    throw new CompilerIssue("'global' consts must be initialized to a string or number literal.", node);
-                }
-
-                let name = declarator.id.name;
-                let globalConst = new Model.GlobalConst(makeLocation(declarator), name, value, raw);
-                modelObjects.push(globalConst);
+            } else {
+                throw new CompilerIssue(`global '${name}' must be initialized to a literal value.`, node);
             }
+
+            modelObjects.push(new Model.Global(makeLocation(declarator), name, value, raw));
         }
     }
 
