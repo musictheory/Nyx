@@ -17,7 +17,6 @@ interface Rect {
 }
 
 
-
 // @test: readonly modifier
 // @typecheck
 // ============================================================================
@@ -42,6 +41,10 @@ Foo.s = "bar"; // @type
 interface Point   { x: number; y: number; z?: number }
 interface Point2D { x: number; y: number }
 interface Point3D { x: number; y: number; z: number }
+
+// Test optional method syntax
+interface IFoo { maybeFunction?(): string; }
+let f: IFoo = { }; f.maybeFunction?.();
 
 let alpha:   Point = { x: 1, y: 2 };
 let alpha3D: Point = { x: 1, y: 2, z: 3 };

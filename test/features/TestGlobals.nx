@@ -26,10 +26,23 @@ assert.strictEqual(GlobalNull, null);
 
 
 
+// @test: Test valid JavaScript
+// ============================================================================
+
+function global(x) {
+    assert.equal(x, "Foo");
+    return "Bar";
+}
+
+assert.equal(global("Foo"), "Bar");
+
+
+
 // @test: Must have an initializer
 // ============================================================================
 
 global ErrorConst; // @error;
+
 
 
 // @test: Must be a literal

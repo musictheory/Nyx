@@ -40,3 +40,28 @@ let foo = new Foo();
 assert.equal(foo.f(   42       ), "f()");
 assert.equal(foo.f(a: 42       ), "f(a:)");
 
+
+// @test: Check parser override
+// ============================================================================
+
+// To implement named parameters in call syntax, we have to override acorn's
+// parseExprList() parser method. Check some edge cases here.
+
+let arr1 = [ 1, 2, 3, ]
+assert.strictEqual(arr1.length, 3);
+
+let arr2 = [ , , ]
+assert.strictEqual(arr2.length, 2);
+assert.strictEqual(arr2[0], undefined);
+assert.strictEqual(arr2[1], undefined);
+
+function foo(a, b, c, d, e) {
+    assert.equal(a, "A");
+    assert.equal(b, "B");
+    assert.equal(c, "C");
+    assert.equal(d, "D");
+    assert.strictEqual(e, undefined);
+}
+
+foo("A", ...[ "B", "C", "D" ]);
+
