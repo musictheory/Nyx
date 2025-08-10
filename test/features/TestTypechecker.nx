@@ -116,7 +116,7 @@ class FooBar {
 let fooBar = new FooBar() as IFooBar;
 fooBar.foo();
 fooBar.bar();
-fooBar.baz(); // @type
+assert.throws(() => fooBar.baz()); // @type
 
 
 
