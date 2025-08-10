@@ -26,7 +26,7 @@ assert.strictEqual(GlobalNull, null);
 
 
 
-// @test: Test valid JavaScript
+// @test: Test 'global' as function
 // ============================================================================
 
 function global(x) {
@@ -41,18 +41,26 @@ assert.equal(global("Foo"), "Bar");
 // @test: Must have an initializer
 // ============================================================================
 
-global ErrorConst; // @error;
+global ErrorConst; // @error
 
 
 
 // @test: Must be a literal
 // ============================================================================
 
-global ErrorConst = new Error("Foo"); // @error;
+global ErrorConst = new Error("Foo"); // @error
 
 
 
 // @test: Must not be a keyword
 // ============================================================================
 
-global void = null; // @error;
+global void = null; // @error
+
+
+
+// @test: Duplicate global error
+// ============================================================================
+
+global Foo = "Foo";
+global Foo = "Bar"; // @error

@@ -35,6 +35,13 @@ _visitNode(node)
     if (ts.isIdentifier(node)) {
         this._builtins.add(node.escapedText);
 
+    } else if (ts.isModuleDeclaration(node)) {
+        let name = node.name.escapedText;
+
+        for (let reOrString of this._unusedNamespaces) {
+            if (name.match(reOrString)) return;
+        }
+        
     } else if (ts.isInterfaceDeclaration(node)) {
         let name = node.name.escapedText;
         
@@ -79,6 +86,9 @@ async generateBuiltins()
 
     let unusedInterfaces = options["unused-interfaces"];
     this._unusedInterfaces = unusedInterfaces ?? [ ];
+
+    let unusedNamespaces = options["unused-namespaces"];
+    this._unusedNamespaces = unusedNamespaces ?? [ ];
 
     this._builtins = new Set();
     

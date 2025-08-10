@@ -114,23 +114,32 @@ _declareIdentifiersIn(nodes)
 }
 
 
-_addObjectDeclaration(declaration, values, types)
+_addObjectDeclaration(declaration, valueDeclarations, typeDeclarations)
 {
+    function add(declarations, declaration) {
+        if (declarations[name]) {
+            throw new Error(`Duplicate identifier '${name}'.`);
+        } else {
+            declarations[name] = declaration;
+        }
+    }
+
     let { name, object } = declaration;
+    let addValue = false, addType = false;
 
     if (
         object instanceof Model.Class ||
         object instanceof Model.Enum  ||
         object instanceof Model.Value
     ) {
-        values[name] = declaration;
-        types[name] = declaration;
+        add(valueDeclarations, declaration);
+        add(typeDeclarations,  declaration);
 
     } else if (object instanceof Model.Runtime) {
-        values[name] = declaration;
+        add(valueDeclarations, declaration);
 
     } else if (object instanceof Model.Type) {
-        types[name] = declaration;
+        add(typeDeclarations,  declaration);
     }
 }
 

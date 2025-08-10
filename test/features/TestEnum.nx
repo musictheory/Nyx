@@ -11,7 +11,9 @@ enum Foo {
     two = 2,
     three,
     four,
-    five
+    five,
+    negativeOne = -1,
+    anotherZero
 };
 
 // Test basic auto-increment behavior
@@ -21,6 +23,8 @@ assert.equal(Foo.two,   2);
 assert.equal(Foo.three, 3);
 assert.equal(Foo.four,  4);
 assert.equal(Foo.five,  5);
+assert.equal(Foo.negativeOne, -1);
+assert.equal(Foo.anotherZero,  0);
 
 // Test scoping - Foo as a function parameter is a variable, not the enum
 (function(Foo) {
@@ -101,6 +105,24 @@ EmptyEnum.bar; //@warning
 
 
 
+// @test: Non-literal error
+// ============================================================================
+
+enum NonLiteralEnum {
+    foo = { } // @error
+}
+
+
+
+// @test: Minus with non-number throws error
+// ============================================================================
+
+enum MinusStringEnum {
+    alpha = -"alpha" // @error
+}
+
+
+
 // @test: Needs Initializer Error
 // ============================================================================
 
@@ -108,5 +130,39 @@ enum NeedsInitializerEnum {
     alpha = "alpha",
     beta // @error
 }
+
+
+
+// @test: Keyword Reserved Error
+// ============================================================================
+
+enum(); // @error
+
+
+
+// @test: Enum scope
+// ============================================================================
+
+enum Foo { foo = 42 }
+
+function f() {
+    enum Foo { foo = 157 }
+    assert.equal(Foo.foo, 157);
+
+    {
+        enum Foo { foo = 169 }
+        assert.equal(Foo.foo, 169);
+    }
+}
+
+assert.equal(Foo.foo, 42);
+
+
+
+// @test: Duplicate enum error
+// ============================================================================
+
+enum Foo { foo = 42 }
+enum Foo { foo = 42 } // @error
 
 

@@ -9,30 +9,10 @@ import vm     from "node:vm";
 
 import Nyx from "../lib/api.js";
 import { Utils } from "../src/Utils.js";
+import support from "./support/support.js";
 
 
 const IsFastTestEnabled = (process.env["NYX_FAST_TEST"] == "1");
-
-
-let TypecheckerDefs = null;
-
-function GetTypecheckerDefs()
-{
-    function makeFile(path) {
-        return {
-            path: path,
-            contents: fs.readFileSync(path).toString()
-        };
-    }
-
-    if (!TypecheckerDefs) {
-        TypecheckerDefs = [ 
-            makeFile(Utils.getProjectPath("test/support/assert.d.ts"))
-        ];
-    }
-    
-    return TypecheckerDefs;
-}
 
 
 class TestSuite {
@@ -199,39 +179,14 @@ class TestCase
             }
         }
     }
-
-    run()
+    
+    _run(name, options)
     {
-        let options = Object.assign({
-            "include-map": true,
-            "source-map-file": "file.json",
-            "source-map-root": ""    
-        }, this.options);
-        
-        options.files = this.files.map(file => {
-            return {
-                path: file.name,
-                contents: file.lines.join("\n")
-            };
-        });
-        
-        if (IsFastTestEnabled) {
-            options["dev-fast-test"] = true;
-        }
-        
-        if (this.runTypechecker) {
-            options["check-types"] = true;
-        }
-
         // Add assert.d.ts to typescript-defs
         if (options["check-types"]) {
-            options["defs"] = GetTypecheckerDefs();
+            options["defs"] = support.getTypecheckerDefs();
         }
-
-        let name = this.name;
         
-        this._buildIssueMaps();
-
         test(name, async () => {
             if (this.configError) {
                 throw this.configError;            
@@ -251,6 +206,45 @@ class TestCase
                 throw e;
             }
         });
+    }
+
+    run()
+    {
+        let name = this.name;
+
+        let options = Object.assign({
+            "include-map": true,
+            "source-map-file": "file.json",
+            "source-map-root": ""    
+        }, this.options);
+        
+        options.files = this.files.map(file => {
+            return {
+                path: file.name,
+                contents: file.lines.join("\n")
+            };
+        });
+
+        if (IsFastTestEnabled) {
+            options["dev-fast-test"] = true;
+        }
+
+        this._buildIssueMaps();
+
+        // Run default pass
+        {
+            this._run(name, Object.assign(options, this.runTypechecker ? {
+                "check-types": true
+            } : { }));
+        }
+
+        // If runSqueezer is true, run again with squeezer enabled
+        if (this.runSqueezer) {
+            this._run(`${name} + squeeze`, Object.assign(options, {
+                "squeeze": true,
+                "squeeze-builtins": support.getSqueezeBuiltins()
+            }));
+        }
     }
 }
 

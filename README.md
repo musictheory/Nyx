@@ -369,10 +369,10 @@ It's possible for a Nyx class to `extend` a plain JavaScript class, but a specia
 ```typescript
 class MyArray extends Array {
     constructor(a0, a1, ...rest) {
-        if (a0 === Nyx.noInitSymbol) {
+        if (a0 === Nyx.noInitSymbol && a1 === "") {
             return super(...rest);
-        } else if (a0 === Nyx.namedInitSymbol) {
-            super(...rest);
+        } else if (a0 === Nyx.noInitSymbol || a0 === Nyx.namedInitSymbol) {
+            super();
         } else {
             super(a0, a1, ...rest);
         }
@@ -380,9 +380,9 @@ class MyArray extends Array {
         Nyx.dispatchInit(this, a0, a1, ...rest);
     }
     
-    init(number: number, times: number) {
+    func init(number: number, times: number) {
         for (let i = 0; i < times; i++) {
-            this.push(i);
+            this.push(number);
         }
     }
 }
@@ -1108,12 +1108,11 @@ This API takes a single `options` argument as follows:
 `typescript-lib` | `string[]` | Passed to TypeScript as `lib`
 `defs` | `string[]` | Additional `.d.ts` files
 `unused-interfaces` | `(string\|RegExp)[]` | Used to skip specified `interface` declarations.
+`unused-namespaces` | `(string\|RegExp)[]` | Used to skip specified `namespace` declarations.
 
 `generateBuiltins()` uses the `ts.createProgram()` TypeScript API to create a small program from the passed-in options. It then traverses each `.d.ts` file.
 
-The name of each `interface` declaration is compared (via `String.prototype.match`) to each element of `unused-interfaces`.
-
-If a match occurs, the `interface` is skipped. If no match occurs, all identifiers contained in the `interface` are added to the result.
+The name of each `interface` declaration is compared (via `String.prototype.match`) to each element of `unused-interfaces`. If a match occurs, the `interface` is skipped. If no match occurs, all identifiers contained in the `interface` are added to the result.
 
 For example, if a project:
 

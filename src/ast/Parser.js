@@ -362,7 +362,7 @@ nxMaybeParseTypeDefinition()
     const node = this.startNode();
     const params = [];
 
-    this.eatContextual("type");
+    this.expectContextual("type");
     
     if (this.type != tt.name) {
         this.restoreState(state);
@@ -389,7 +389,7 @@ nxMaybeParseGlobalDefinition()
     const node = this.startNode();
     const declarations = [];
 
-    this.eatContextual("global");
+    this.expectContextual("global");
 
     if (this.type != tt.name) {
         this.restoreState(state);
@@ -430,11 +430,18 @@ nxParseEnumMember()
 }
 
 
-nxParseEnumDeclaration()
+nxMaybeParseEnumDeclaration()
 {
+    const state = this.saveState();
+    
     const node = this.startNode();
 
     this.expectContextual("enum");
+
+    if (this.type != tt.name) {
+        this.restoreState(state);
+        return null;
+    }
 
     node.id = this.parseIdent();
     node.members = [];
@@ -477,7 +484,7 @@ nxParseHeritageClause(token)
 }
 
 
-nxParseInterfaceDeclaration()
+nxMaybeParseInterfaceDeclaration()
 {
     const state = this.saveState();
 
@@ -551,16 +558,20 @@ parseClassElement(constructorAllowsSuper)
 
     let atIdentifier = (this.type == tt.atId) ? this.nxParseAtIdentifier() : null;
     
-    if (canBeProp && this.eatContextual("prop")) {
-        let modifier = null;
+    if (canBeProp && eat("prop")) {
+        if (this.type == tt.name || this.type.keyword) {
+            let modifier = null;
 
-        if      (isPrivate)  modifier = "private";
-        else if (isReadonly) modifier = "readonly";
+            if      (isPrivate)  modifier = "private";
+            else if (isReadonly) modifier = "readonly";
 
-        return this.nxParseProp(node, isStatic, modifier, atIdentifier);
+            return this.nxParseProp(node, isStatic, modifier, atIdentifier);
+        }
 
-    } else if (canBeFunc && this.eatContextual("func")) {
-        return this.nxParseFunc(node, isStatic, isAsync, atIdentifier);
+    } else if (canBeFunc && eat("func")) {
+        if (this.type == tt.name || this.type.keyword) {
+            return this.nxParseFunc(node, isStatic, isAsync, atIdentifier);
+        }
 
     } else if (isReadonly && !isAsync && !atIdentifier) {
         let savedPosition = this.pos;
@@ -708,10 +719,12 @@ parseStatement(context, topLevel, exports)
         return result;
 
     } else if (this.isContextual("enum")) {
-        return this.nxParseEnumDeclaration();
-        
+        let result = this.nxMaybeParseEnumDeclaration();
+        if (result) return result;
+
     } else if (this.isContextual("interface")) {
-        return this.nxParseInterfaceDeclaration();
+        let result = this.nxMaybeParseInterfaceDeclaration();
+        if (result) return result;
 
     } else if (this.isContextual("type")) {
         let result = this.nxMaybeParseTypeDefinition();

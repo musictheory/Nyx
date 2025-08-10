@@ -97,6 +97,7 @@ function serializeDiagnostic(diagnostic)
 async function prepare(checkerID, groupID, inOptions)
 {
     sPromiseMap.set(checkerID, new Promise(async (resolve, reject) => {
+        /* node:coverage ignore next 4 */
         if (inOptions["dev-fast-test"]) {
             resolve("dev-fast-test");
             return;
@@ -158,9 +159,7 @@ async function prepare(checkerID, groupID, inOptions)
 
                 fileExists: fileName => { return sFileMap.has(fileName); },
 
-                readFile: fileName => {
-                    console.log("readFile", fileName);
-                },
+                readFile: fileName => { },
                 
                 readDirectory:   ts.sys.readDirectory,
                 directoryExists: ts.sys.directoryExists,

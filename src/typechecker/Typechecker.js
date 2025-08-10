@@ -289,7 +289,7 @@ _getWarnings(diagnostics, squeezer)
         // Symbolicate reason string and remove ending colon/period
         reason = SymbolUtils.symbolicate(reason, squeezer).replace(/[\:\.]$/, "");
 
-        let issue = new CompilerIssue(reason, {  line, column });
+        let issue = new CompilerIssue(reason, { line, column });
         issue.addFile(fileName);
         issue.code = code;
         issue.typechecker = true;

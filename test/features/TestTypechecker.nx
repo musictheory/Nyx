@@ -17,6 +17,7 @@ interface Rect {
 }
 
 
+
 // @test: readonly modifier
 // @typecheck
 // ============================================================================
@@ -32,6 +33,7 @@ let f = new Foo();
 f.x = "bar"; // @type
 
 Foo.s = "bar"; // @type
+
 
 
 // @test: interface optional field
@@ -65,6 +67,7 @@ takesPoint3D(beta);
 takesPoint3D(beta3D);
 
 
+
 // @test: 'as' expression
 // @typecheck
 // ============================================================================
@@ -75,6 +78,7 @@ enum Bar { foo, bar, baz };
 function takesBar(x: Bar) { }
 let x: Foo = Foo.foo;
 takesBar(x as number as Bar);
+
 
 
 // @test: postfix '!'
@@ -92,3 +96,67 @@ let x2 = actuallyReturnsNonNullString();
 
 takesNonNullString(x1); // @type
 takesNonNullString(x2!);
+
+
+
+// @test: Test 'extends' on 'interface'
+// @typecheck
+// ============================================================================
+
+interface IFoo { foo(): string }
+interface IBar { bar(): string }
+
+interface IFooBar extends IFoo, IBar { }
+
+class FooBar {
+    foo() { return "foo"; }
+    bar() { return "bar"; }
+}
+
+let fooBar = new FooBar() as IFooBar;
+fooBar.foo();
+fooBar.bar();
+fooBar.baz(); // @type
+
+
+
+// @test: Allow void annotation on setter
+// @typecheck
+// ============================================================================
+
+class Foo {
+    #foo: string;
+    get foo(): string { return this.#foo; }
+
+    #bar: string;
+    get bar(): string { return this.#bar; }
+
+    // 'void' is ok and Nyx will strip it
+    set foo(x: string): void { this.#foo = x; }
+
+    // Anything else will not be stripped and TS will warn
+    set bar(x: string): string[] { this.#bar = x; } // @type
+}
+
+
+// @test: Test 'type' as function
+// @typecheck
+// ============================================================================
+
+function type(x: string) {
+    assert.equal(x, "Foo");
+    return "Bar";
+}
+
+assert.equal(type("Foo"), "Bar");
+
+
+
+// @test: Edge cases
+// @typecheck
+// ============================================================================
+
+
+// Check special case where type annotation is before <
+assert.equal({ } as any as number < 42, false);
+

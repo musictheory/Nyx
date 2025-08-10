@@ -1,6 +1,7 @@
 // @suite: Feature: prop
 
 // @test: prop
+// @squeeze
 // ============================================================================
 
 class Foo {
@@ -63,6 +64,7 @@ class Foo {
 }
 
 
+
 // @test: shortcuts
 // ============================================================================
 
@@ -99,6 +101,7 @@ assert.equal(f.foo, 4);
 f.assertPoundFoo(4);
 
 
+
 // @test: Custom getter/setter
 // ============================================================================
 
@@ -122,6 +125,30 @@ foo.propWithCustomGetter = 42;
 
 assert.equal(foo.propWithCustomSetter, 157);
 assert.equal(foo.propWithCustomSetter, 157);
+
+
+
+// @test: Keyword as prop name
+// ============================================================================
+
+class Foo {
+    prop for: string;
+}
+
+let f = new Foo();
+f.for = "for";
+assert.equal(f.for, "for");
+
+
+
+// @test: 'prop' as name of method
+// ============================================================================
+
+class Foo {
+    prop(a: number): string { return "Foo"; }
+}
+
+assert.equal((new Foo()).prop(42), "Foo");
 
 
 

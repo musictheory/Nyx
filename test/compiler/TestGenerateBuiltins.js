@@ -10,7 +10,8 @@ if (!process.env["NYX_FAST_TEST"]) {
             let builtins = await nyx.generateBuiltins({
                 "typescript-target": "es2020",
                 "typescript-lib": "es2020",
-                "unused-interfaces": [ /Atomics/ ]
+                "unused-interfaces": [ /Atomics/ ],
+                "unused-namespaces": [ /Intl/ ]
             });
             
             const shouldInclude = [
@@ -20,7 +21,8 @@ if (!process.env["NYX_FAST_TEST"]) {
 
             const shouldNotInclude = [
                 "foo", "bar", "baz",
-                "compareExchange" // From Atomics
+                "compareExchange", // From Atomics
+                "getCanonicalLocales" // From Intl
             ];            
             
             for (let name of shouldInclude) {

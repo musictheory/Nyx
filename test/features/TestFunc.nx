@@ -28,6 +28,7 @@ assert.equal(foo.f(42, 42, c: 42), "f(_:_:c:)");
 assert.equal(foo.noArg(), "noArg()");
 
 
+
 // @test: Co-exist with class method
 // ============================================================================
 
@@ -39,6 +40,38 @@ class Foo {
 let foo = new Foo();
 assert.equal(foo.f(   42       ), "f()");
 assert.equal(foo.f(a: 42       ), "f(a:)");
+
+
+
+// @test: Keyword as func base name
+// ============================================================================
+
+class Foo {
+    func for():            string { return "for()"; }
+    func for(a: number):   string { return "for(a:)"; }
+
+    func let(_ a: number): string { return "let(_:)"; }
+    func let(a: number):   string { return "let(a:)"; }
+
+}
+
+let foo = new Foo();
+assert.equal(foo.for(),      "for()");
+assert.equal(foo.for(a: 42), "for(a:)");
+assert.equal(foo.let(42),    "let(_:)");
+assert.equal(foo.let(a: 42), "let(a:)");
+
+
+
+// @test: 'func' as name of method
+// ============================================================================
+
+class Foo {
+    func(a: number): string { return "Foo"; }
+}
+
+assert.equal((new Foo()).func(42), "Foo");
+
 
 
 // @test: Check parser override

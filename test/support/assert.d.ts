@@ -1,4 +1,4 @@
-// Based on 
+// Based on 'assert/index.d.ts' from https://github.com/DefinitelyTyped/DefinitelyTyped
 
 type AssertPredicate = RegExp | (new() => object) | ((thrown: unknown) => boolean) | object | Error;
 

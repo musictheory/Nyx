@@ -1,0 +1,98 @@
+// @suite: Feature: Nyx Runtime
+
+
+// @test: Custom Initializer
+// ============================================================================
+
+import { Nyx }
+
+class MyArray extends Array {
+    constructor(a0, a1, ...rest) {
+        if (a0 === Nyx.noInitSymbol && a1 === "") {
+            return super(...rest);
+        } else if (a0 === Nyx.noInitSymbol || a0 === Nyx.namedInitSymbol) {
+            super();
+        } else {
+            super(a0, a1, ...rest);
+        }
+
+        Nyx.dispatchInit(this, a0, a1, ...rest);
+    }
+
+    func init(number: number, times: number) {
+        for (let i = 0; i < times; i++) {
+            this.push(number);
+        }
+    }
+}
+
+class MyArraySubclass extends MyArray {
+    func foo() { }; // Ensure generation of constructor
+}
+
+
+let arr1 = new MyArray(1, 2, 3);
+assert.deepStrictEqual(Array.from(arr1), [ 1, 2, 3 ]);
+
+let arr2 = new MyArray(number: 2, times: 3);
+assert.deepStrictEqual(Array.from(arr2), [ 2, 2, 2 ]);
+
+let arr3 = new MyArraySubclass(1, 2, 3);
+assert.deepStrictEqual(Array.from(arr3), [ 1, 2, 3 ]);
+
+let arr4 = new MyArraySubclass(number: 2, times: 3);
+assert.deepStrictEqual(Array.from(arr4), [ 2, 2, 2 ]);
+
+
+
+// @test: getFuncIdentifier
+// @squeeze
+// ============================================================================
+
+import { Nyx }
+
+class Foo {
+    func foo(a: string, b: string) { return a + b; }
+}
+
+let f = new Foo();
+let result = f[Nyx.getFuncIdentifier("foo(a:b:)")]("Foo", "Bar");
+assert.equal(result, "FooBar");
+
+
+// @test: getFuncIdentifier - Invalid Use 1
+// ============================================================================
+
+import { Nyx }
+Nyx.getFuncIdentifier("foo", "bar") // @error - Two arguments
+
+
+// @test: getFuncIdentifier - Invalid Use 2
+// ============================================================================
+
+import { Nyx }
+Nyx.getFuncIdentifier(5) // @error - Argument is not a string
+
+
+
+// @test: getFuncIdentifier - Invalid Use 3
+// ============================================================================
+
+import { Nyx }
+Nyx.getFuncIdentifier("!@#$") // @error - "is not a valid func signature"
+
+
+
+// @test: getFuncIdentifier - Invalid Use 4
+// ============================================================================
+
+import { Nyx }
+Nyx.getFuncIdentifier("foo()") // @error - "has no named arguments"
+
+
+
+// @test: Unknown runtime property error
+// ============================================================================
+
+import { Nyx }
+Nyx.fooFooFoo // @error

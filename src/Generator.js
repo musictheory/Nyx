@@ -128,7 +128,8 @@ generate()
             if (
                 parent.type != Syntax.CallExpression ||
                 parent.arguments.length != 1 ||
-                parent.arguments[0].type != Syntax.Literal
+                parent.arguments[0].type != Syntax.Literal ||
+                typeof parent.arguments[0].value !== "string"
             ) {
                 throw new CompilerIssue(`Invalid use of Nyx.getFuncIdentifier`, node);
             }
@@ -269,12 +270,7 @@ generate()
                 constructorText = `constructor(...A) { ${rootVariable}.i(this, ...A); }`;
             }
 
-            if (node.body.body.length > 0) {
-                modifier.replace(node.body.start, node.body.body[0].start, `{${constructorText}`);
-
-            } else {
-                modifier.replace(node.body, `{${constructorText}}`);
-            }
+            modifier.replace(node.body.start, node.body.body[0].start, `{${constructorText}`);
         }
     }
 
@@ -295,8 +291,11 @@ generate()
         
         if (language === LanguageTypechecker) {
             if (node.kind == "set" && node.value.annotation) {
-                modifier.remove(node.value.annotation);
-                toSkip.add(node.value.annotation);
+                // Allow "void" annotation on setter
+                if (node.value.annotation?.value?.name?.name == "void") {
+                    modifier.remove(node.value.annotation);
+                    toSkip.add(node.value.annotation);
+                }
             }
         }
     }
