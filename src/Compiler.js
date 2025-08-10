@@ -29,61 +29,6 @@ import { Typechecker           } from "./typechecker/Typechecker.js";
 const Log = Utils.log;
 
 
-const sPublicOptions = [
-
-    // Input options
-    "files",                     // string or Object, files to compile
-    "prepend",                   // string or string[], content/lines to prepend, not compiled
-    "append",                    // string or string[], content/lines to append, not compiled
-
-    // Output options
-    "output-language",           // string, Output language ('none' or 'es5' public, 'typechecker' for debugging only)
-    "include-map",               // boolean, include 'map' key in results object
-    "source-map-file",           // string, Output source map file name
-    "source-map-root",           // string, Output source map root URL
-
-    "before-compile",            // Function, callback to call per-file before the nyx->js compile
-    "after-compile",             // Function, callback to call per-file after the nyx->js compile
-
-    // Language Features
-    "interceptors",              // Record<string, Function>, string interceptor functions
-    "additional-globals",        // Record<string, string|number|boolean|null>
-    "observers",                 // Record<string, string|number>, prop observers
-    "target-tags",               // Record<string, boolean>, target tags
-
-    // Squeezer options
-    "squeeze",                   // boolean, enable squeezer
-    "squeeze-start-index",       // number, start index for squeezer
-    "squeeze-end-index",         // number, end index for squeezer"
-    "squeeze-builtins",          // string[], list of identifiers to not squeeze
-
-    // Typechecker options
-    "check-types",               // boolean, enable type checker
-    "defs",                      // string or Object, additional typechecker defs
-    "typescript-target",         // string
-    "typescript-lib",            // string, specify alternate lib.d.ts file(s)
-    "typescript-options",        // Record<string, any> of TypeScript options
-
-    // Private / Development
-    "dev-dump-tmp",              // boolean, dump debug info to /tmp
-    "dev-print-log",             // boolean, print log to stdout
-    "dev-omit-runtime",          // boolean, omit runtime (for nyxdev.js tool)
-    "dev-output-typescript",     // boolean, output typescript code (for nyxdev.js tool)
-    "dev-fast-test",             // boolean, set by test runner to skip TypeScript loading
-
-    "allow-private-options",     // boolean, allow use of sPrivateOptions (see below)
-];
-let sPublicOptionsSet = new Set(sPublicOptions);
-
-
-// Please file a GitHub issue if you wish to use these
-const sPrivateOptions = [
-    "include-bridged",
-    "include-function-map"
-];
-let sPrivateOptionsSet = new Set(sPrivateOptions);
-
-
 export class Compiler {
 
 
