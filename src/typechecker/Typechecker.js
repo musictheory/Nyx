@@ -9,11 +9,12 @@
 import fs   from "node:fs";
 import path from "node:path";
 
-import { CompilerIssue } from "../model/CompilerIssue.js";
-import { Generator     } from "../Generator.js";
-import { SymbolUtils   } from "../SymbolUtils.js";
-import { TypeWorker    } from "./TypeWorker.js";
-import { Utils         } from "../Utils.js";
+import { CompilerIssue   } from "../model/CompilerIssue.js";
+import { CompilerOptions } from "../model/CompilerOptions.js";
+import { Generator       } from "../Generator.js";
+import { SymbolUtils     } from "../SymbolUtils.js";
+import { TypeWorker      } from "./TypeWorker.js";
+import { Utils           } from "../Utils.js";
 
 
 let sNextCheckerID = 1;
@@ -65,11 +66,11 @@ constructor(parents, options)
     this._defsMap = new Map();
     this._codeMap = new Map();
 
-    this._generatorOptions = {
+    this._generatorOptions = new CompilerOptions({
         "output-language": "typechecker",
         "additional-globals": options["additional-globals"],
         "observers": options["observers"]
-    };
+    });
     
     let tsTarget = options["typescript-target"] ?? "es2022";
 

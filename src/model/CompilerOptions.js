@@ -38,10 +38,11 @@ for (let [ key, value ] of Object.entries({
     "after-compile":             { v: vFunction, i: true }, // Function, callback to call per-file after the nyx->js compile
 
     // Language Features 
-    "interceptors":              { v: vInterceptors      }, // Record<string, Function>, string interceptor functions
-    "additional-globals":        { v: vAdditionalGlobals }, // Record<string, string|number|boolean|null>
-    "observers":                 { v: vObservers         }, // Record<string, string|number>, prop observers
-    "target-tags":               { v: vTargetTags        }, // Record<string, boolean>, target tags
+    "interceptors":              { v: vInterceptors      }, // Map<string, Function>, string interceptor functions
+    "additional-globals":        { v: vAdditionalGlobals }, // Map<string, string|number|boolean|null>
+    "observers":                 { v: vObservers         }, // Map<string, string|number>, prop observers
+    "target-tags":               { v: vTargetTags        }, // Map<string, boolean>, target tags
+    "undefined-guards":          { v: vUndefinedGuards   }, // Set<string>, enabled undefined guards
 
     // Squeezer options
     "squeeze":                   { v: vBoolean, x: true }, // Enable squeezer
@@ -155,6 +156,29 @@ function vFunction(key, value)
     if (isFunction(value)) return value;
 
     throw new Error(`Compiler option '${key}' must be a function.`);
+}
+
+
+function vArrayOrSet(key, value, memberCallback)
+{
+    let outSet = new Set();
+    let iterator;
+
+    if (isEmpty(value)) {
+        return outSet;
+    }
+
+    if ((value instanceof Set) || Array.isArray(value)) {
+        iterator = value.values();
+    } else {
+        throw new Error(`Compiler option '${key}' must be an array or Set.`);
+    }
+
+    for (let member of iterator) {
+        outSet.add(memberCallback(member));
+    }
+
+    return outSet;
 }
 
 
@@ -305,6 +329,22 @@ function vTargetTags(key, value)
         }
 
         return value;
+    });
+}
+
+
+// Validator for "undefined-guards"
+//
+function vUndefinedGuards(key, value)
+{
+    let validMembers = new Set([ "init", "get", "set" ]);
+
+    return vArrayOrSet(key, value, member => {
+        if (!validMembers.has(member)) {
+            throw new Error(`Invalid member value for '${key}': '${member}'`);
+        }
+        
+        return member;
     });
 }
 

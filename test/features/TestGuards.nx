@@ -1,0 +1,100 @@
+// @suite: Feature: Undefined Guards
+
+// @test: 'init' / 'set' guards
+// @options: { "undefined-guards": [ "init", "set" ] }
+// ============================================================================
+
+import { Nyx };
+
+let reports = [ ];
+
+Nyx.reportUndefined = function(e) {
+    reports.push(e);
+};
+
+class Foo {
+prop foo: number;
+prop bar: number = 0;
+prop baz: number;
+prop moo: string = "";
+}
+
+assert.equal(reports.length, 0);
+
+let f = new Foo();
+
+assert.equal(reports.length, 1);
+
+let reportString0 = reports[0].toString();
+assert( reportString0.includes("'foo'"));
+assert(!reportString0.includes("'bar'"));
+assert( reportString0.includes("'baz'"));
+assert(!reportString0.includes("'moo'"));
+
+f.moo = undefined;
+assert.equal(reports.length, 2);
+
+let reportString1 = reports[1].toString();
+assert(reportString1.includes("'moo'"));
+
+let x = f.moo;
+assert.equal(reports.length, 2);
+
+
+
+// @test: 'init' guards with subclasses
+// @options: { "undefined-guards": [ "init" ] }
+// ============================================================================
+
+import { Nyx };
+
+let reports = [ ];
+
+Nyx.reportUndefined = function(e) {
+    reports.push(e);
+};
+
+class Foo             { prop foo: number = 42; }
+class Bar extends Foo { prop bar: number = 42; }
+class Baz extends Foo { prop baz: number;      }
+class Moo extends Baz { prop moo: number = 42; }
+
+assert.equal(reports.length, 0);
+
+let foo = new Foo();    assert.equal(reports.length, 0);
+let bar = new Bar();    assert.equal(reports.length, 0);
+let baz = new Baz();    assert.equal(reports.length, 1);
+let moo = new Moo();    assert.equal(reports.length, 2);
+
+
+
+// @test: 'get' guard
+// @options: { "undefined-guards": [ "get" ] }
+// ============================================================================
+
+import { Nyx };
+
+let reports = [ ];
+
+Nyx.reportUndefined = function(e) {
+    reports.push(e);
+};
+
+
+class Foo {
+prop foo: string = "";
+}
+
+assert.equal(reports.length, 0);
+
+let f = new Foo();
+assert.equal(reports.length, 0);
+
+f.foo = undefined;
+assert.equal(reports.length, 0);
+
+let x = f.foo;
+assert.equal(reports.length, 1);
+
+let reportString0 = reports[0].toString();
+assert(reportString0.includes("'foo'"));

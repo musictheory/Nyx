@@ -8,9 +8,7 @@
 
 
 const RootVariable = "N$$_";
-
 const FuncPrefix   = "N$f_";
-const ImportPrefix = "N$i_";
 
 
 /*
@@ -34,7 +32,24 @@ function getImportExpression(name, squeezer)
 */
 function getImportIdentifier(name, squeezer)
 {
-    let result = `${ImportPrefix}${name}`;
+    let result = `N$i_${name}`;
+    if (squeezer) result = squeezer.squeeze(result);
+    return result;
+}
+
+
+/*
+    getDebugIdentifier()
+
+    Used to obfuscate identifiers in debug strings. Used by
+    Undefined Guards.
+    
+    Input: "NameToNotLeak"
+    Output: "N$d_NameToNotLeak"
+*/
+function getDebugIdentifier(name, squeezer)
+{
+    let result = `N$d_${name}`;
     if (squeezer) result = squeezer.squeeze(result);
     return result;
 }
@@ -181,7 +196,7 @@ function symbolicate(string, squeezerOrSqueezed)
                 return toFuncString(components);
             }
 
-        } else if (match.startsWith(ImportPrefix)) {
+        } else if (match.match(/^N\$[A-Za-z]_/)) {
             return match.substring(4);
 
         } else {
@@ -196,6 +211,8 @@ export const SymbolUtils = {
 
     getImportExpression,
     getImportIdentifier,
+    
+    getDebugIdentifier,
 
     getTypePlaceholder,
 

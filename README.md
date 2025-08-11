@@ -15,6 +15,7 @@ Nyx is a superset of the JavaScript language. It is the successor to [NilScript]
   - [String Interceptors](#string-interceptors)
   - [Target Tags](#target-tags)
   - [Globals](#globals)
+  - [Undefined Guards](#undefined-guards)
 - [Runtime API](#runtime-api)
 - [Compiling Projects](#compiling-projects)
     - [Compiler Options](#compiler-options)
@@ -750,6 +751,59 @@ let options = {
 };
 ```
 
+
+### Undefined Guards
+
+When dealing with multiple `init` methods, it's easy to leave a `prop` uninitialized. While TypeScript has a `strictPropertyInitialization` option, it conflicts with Nyx's initialization system due to the [lack of program flow analysis](https://redirect.github.com/microsoft/TypeScript/issues/30462).
+
+Nyx offers Undefined Guards as an interim solution. To enable, set the `undefined-guards` option an array or Set containing `"init"`, `"get"`, or `"set"`.
+
+| Member | Description |
+|-|-|
+| `"init"` | After running all [Initializers](#initializers) and [Post-Initializers](#post-initializers), Nyx checks the backing class field of each `prop`.
+| `"set"` | Nyx checks the argument of each generated `prop` setter.
+| `"get"` | Nyx checks the return value of each generated `prop` getter.
+
+When Nyx detects an `undefined` value, it calls `Nyx.reportUndefined` with an `Error` object. The default `Nyx.reportUndefined` function simply logs the error to console.
+
+For example:
+
+```javascript
+/* This code block is a Compiler API example. */
+
+let options = {
+    …,
+    "undefined-guards": [ "init", "set" ]
+};
+```
+
+```typescript
+import { Nyx }
+
+Nyx.reportUndefined = (err) => {
+    … // Do something with err
+};
+
+class Foo() {
+    prop p1: string;
+    prop p2: string = "";
+    prop p3: number;        
+}
+
+// Calls Nyx.reportUndefined due to "init"
+// Error: 'Foo' has undefined props after init: 'p1', 'p3'
+let foo = new Foo(); 
+
+// Calls Nyx.reportUndefined due to "set"
+// Error: 'Setting 'p2' to undefined.
+foo.p2 = undefined;
+
+// This would call Nyx.reportUndefined if "get" were included
+// Error: 'p3' is undefined.
+let x = foo.p3; 
+```
+
+
 ## Runtime API
 
 Nyx includes a small runtime API for advanced situations. It can be accessed via `import { Nyx };`
@@ -759,6 +813,7 @@ Nyx includes a small runtime API for advanced situations. It can be accessed via
 | **Nyx.dispatchInit()** <br> **Nyx.noInitSymbol** <br> **Nyx.namedInitSymbol** | Used in initialization. See [Behind The Scenes: Initializers](#behind-the-scenes-initializers).
 | **Nyx.postInitSymbol** | Used by [Post-initializers](#post-initializers).
 | **Nyx.observerSymbol** | Used by [Property Observers](#property-observers).
+| **Nyx.reportUndefined** | Used by [Undefined Guards](#undefined-guards).
 
 **Nyx.getFuncIdentifier()**
 
@@ -842,10 +897,11 @@ source-map-file           | `string`   | Output source map file name
 source-map-root           | `string`   | Output source map root URL
 before-compile            | *        | Before-compile callback ([see below](#beforeafter-compile-callbacks))
 after-compile             | *        | After-compile callback ([see below](#beforeafter-compile-callbacks))
-interceptors | `Record` or `Map` | String interceptor functions. See [String Interceptors](#string-interceptors).
-additional-globals | `Record` or `Map` | Additional globals. See [Globals](#globals).
-observers | `Record` or `Map` | Observers. Values must be a `number` or `string`
-target-tags | `Record` or `Map` | Target Tags. Values must be a `boolean`.
+interceptors | `Record` or `Map` | [String Interceptor](#string-interceptors) functions.
+additional-globals | `Record` or `Map` | Additional [globals](#globals).
+observers | `Record` or `Map` | [Observers](#observers). Values must be a `number` or `string`
+target-tags | `Record` or `Map` | [Target Tags](#target-tags). Values must be a `boolean`.
+undefined-guards | `string[]` or `Set` | [Undefined Guards](#undefined-guards).  Members must be `"init"`, `"get"`, or `"set"`.
 squeeze                   | `boolean`  | If true, enable squeezer
 squeeze-start-index       | `number`   | Start index for squeezer
 squeeze-end-index         | `number`   | End index for squeezer
@@ -969,8 +1025,6 @@ options = {
 
 ### Additional Compiler API
 
-
-#### nyx.getRuntimePath
 
 #### nyx.generateBuiltins
 
@@ -1146,7 +1200,7 @@ Nyx's `TypeParser` class is heavily based on [acorn-typescript](https://github.c
 
 ## License
 
-runtime.js is public domain.
+`runtime*.js` files are public domain.
 
 All other files in this project are licensed under the [MIT license](http://github.com/musictheory/Nyx/raw/main/LICENSE.MIT).
 

@@ -1,5 +1,5 @@
 /*
-    runtime.d.ts, TypeScript declaration file for runtime.js
+    runtime.d.ts, TypeScript declaration file for Nyx runtime
     Public Domain.
 */
 
@@ -14,6 +14,14 @@ interface N$R_Runtime {
     readonly n: unique symbol;
     readonly p: unique symbol;
     readonly o: unique symbol;
+    
+    r: ((error: Error) => void) | null;
+
+    // Defined in runtimeExtGuards.js
+    readonly g: unique symbol;
+    gi: (name: string, args: (any|undefined)[]) => void;
+    gg: (name: string, value: any|undefined) => void;
+    gs: (name: string, value: any|undefined) => void;
 }
 
 declare var N$$_: N$R_Runtime;

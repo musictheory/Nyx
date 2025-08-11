@@ -96,6 +96,12 @@ test("CompilerOptions", t => {
     testOption("typescript-lib", [ "foo" , "bar" ], [ "foo", "bar" ]);
     assert.throws(() => { testOption("typescript-lib", 42, null); });
 
+    testOption("undefined-guards", null, new Set());
+    testOption("undefined-guards", [ ], new Set());
+    testOption("undefined-guards", [ "init", "get" ], new Set([ "init", "get" ]));
+    assert.throws(() => { testOption("undefined-guards", 42, null); });
+    assert.throws(() => { testOption("undefined-guards", [ 5 ], null); });
+    assert.throws(() => { testOption("undefined-guards", [ "moo" ], null); });
 
     // allowsIncrementalCompile()
     {

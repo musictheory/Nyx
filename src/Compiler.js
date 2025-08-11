@@ -320,27 +320,31 @@ async _finish(files, options)
             return [ ];
         }
     }
+    
+    async function getLinesFromProjectFile(inPath) {
+        let path = Utils.getProjectPath(inPath);
+        return (await fs.readFile(path)).toString().split("\n");
+    }
 
     let prependLines = getLines( options["prepend"] );
     let appendLines  = getLines( options["append"] );
-    
-    let globalIdentifier = options["global-identifier"] ?? "__N$$__";
-    
-    // Add runtime if needed
-    if (this._parents.length == 0 && !options["dev-omit-runtime"]) {
-        let runtimeLines = (await fs.readFile(Utils.getRuntimePath()))
-            .toString()
-            .replaceAll("__N$$__", globalIdentifier.replaceAll("$", "$$$$"))
-            .split("\n");
 
-        prependLines.push(...runtimeLines);
+    // Add runtime if needed
+    if (!options["dev-omit-runtime"]) {
+        if (this._parents.length == 0) {
+            prependLines.push(...await getLinesFromProjectFile("lib/runtime.js"));
+        }
+
+        if (options["undefined-guards"].size > 0) {
+            prependLines.push(...await getLinesFromProjectFile("lib/runtimeExtGuards.js"));
+        }
     }
     
     // Add root variable and top-level IIFE
     {
         prependLines.push(
             `(function() { "use strict";`,
-            `const N$$_ = globalThis[Symbol.for("${globalIdentifier}")];`
+            `const N$$_ = globalThis[Symbol.for("__N$$__")];`
         );
         
         appendLines.splice(0, 0,

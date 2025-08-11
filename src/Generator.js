@@ -57,9 +57,10 @@ constructor(file, model, squeezer, options)
         inlines.set(key, JSON.stringify(value));
     }
 
-    this._inlines = inlines;
-    this._interceptors = options["interceptors"];
-    this._targetTags   = options["target-tags"];
+    this._inlines         = inlines;
+    this._interceptors    = options["interceptors"];
+    this._targetTags      = options["target-tags"];
+    this._undefinedGuards = options["undefined-guards"];
 }
 
 
@@ -75,9 +76,10 @@ generate()
     let options      = this._options;
     let filePath     = this._file.path;
 
-    let inlines      = this._inlines;
-    let interceptors = this._interceptors;
-    let targetTags   = this._targetTags;
+    let inlines         = this._inlines;
+    let interceptors    = this._interceptors;
+    let targetTags      = this._targetTags;
+    let undefinedGuards = this._undefinedGuards;
     
     let toSkip = new Set();
 
@@ -173,6 +175,10 @@ generate()
         } else if (propertyName == "observerSymbol") {
             replacement = SymbolUtils.RootVariable + ".o";
 
+        // Nyx.reportUndefined
+        } else if (propertyName == "reportUndefined") {
+            replacement = SymbolUtils.RootVariable + ".r";
+
         } else {
             throw new CompilerIssue(`Unknown runtime property: Nyx.${propertyName}`, node);
         }
@@ -251,26 +257,58 @@ generate()
             }
         }
 
-        if (isInitBased(currentClass) && language === LanguageEcmascript) {
+        if (language === LanguageEcmascript) {
             let rootVariable = SymbolUtils.RootVariable;
 
             let constructorText;
             
-            if (node.superClass) {
-                constructorText = [
-                    "constructor(A, B, ...C) {",
-                    `let x = ${rootVariable}.x;`,           // x = Nyx.noInitSymbol
-                    `A == x || A == ${rootVariable}.n ?`,   // n = Nyx.namedInitSymbol
-                    "super(x, B, ...C) : super(x, '', A, B, ...C);",
-                    `${rootVariable}.i(this, A, B, ...C);`,
-                    "}"
+            if (isInitBased(currentClass)) {
+                if (node.superClass) {
+                    constructorText = [
+                        "constructor(A, B, ...C) {",
+                        `let x = ${rootVariable}.x;`,           // x = Nyx.noInitSymbol
+                        `A == x || A == ${rootVariable}.n ?`,   // n = Nyx.namedInitSymbol
+                        "super(x, B, ...C) : super(x, '', A, B, ...C);",
+                        `${rootVariable}.i(this, A, B, ...C);`,
+                        "}"
+                    ].join("");
+                
+                } else {
+                    constructorText = `constructor(...A) { ${rootVariable}.i(this, ...A); }`;
+                }
+            }
+            
+            if (undefinedGuards.has("init") && currentClass.getProps().size) {
+                let className = currentClass.name;
+                if (squeezer) {
+                    className = SymbolUtils.getDebugIdentifier(className, squeezer);
+                }
+            
+                let initGuardText = [
+                    `[${rootVariable}.g]() {`, // g = afterInitCheckSymbol
+                    node.superClass ? `super[${rootVariable}.g]();` : "",
+                    `${rootVariable}.gi("${className}", [`, // gi = afterInitCheck
+
+                    Array.from(currentClass.getProps()).sort().map(name => {
+                        let propertyName = name;
+                        let backingName  = `#${name}`;
+
+                        if (squeezer) {
+                            propertyName = squeezer.squeeze(propertyName);
+                        }
+                        
+                        return `"${propertyName}",this.${backingName}`
+                    }).join(","),
+
+                    `])}`,
                 ].join("");
             
-            } else {
-                constructorText = `constructor(...A) { ${rootVariable}.i(this, ...A); }`;
+                constructorText = (constructorText ?? "") + initGuardText;
             }
 
-            modifier.replace(node.body.start, node.body.body[0].start, `{${constructorText}`);
+            if (constructorText) {
+                modifier.replace(node.body.start, node.body.body[0].start, `{${constructorText}`);
+            }
         }
     }
 
@@ -623,6 +661,8 @@ generate()
         toSkip.add(node.key);
         toSkip.add(node.annotation);
 
+        let rootVariable = SymbolUtils.RootVariable;
+
         let isPrivate  = (node.modifier == "private");
         let isReadOnly = (node.modifier == "readonly");
 
@@ -682,13 +722,25 @@ generate()
                 s.push(`}`);
             }
 
+            if (undefinedGuards.has("set")) {
+                s.push(`${rootVariable}.gs("${propertyName}", arg);`);
+            }
+
             let argType = "";
 
             result += `${staticString} set ${propertyName}(arg${annotation}) {${s.join(" ")} } `;
         }
             
         if (wantsGetter && !currentClass.hasGetter(name, isStatic)) {
-            result += `${staticString} get ${propertyName}()${annotation} { return this.${backingName}; } `;
+            let g = [ ];
+
+            if (undefinedGuards.has("get")) {
+                g.push(`${rootVariable}.gg("${propertyName}", this.${backingName});`);
+            }
+
+            g.push(`return this.${backingName};`);
+
+            result += `${staticString} get ${propertyName}()${annotation} {${g.join(" ")} } `;
         }
 
         if (typePlaceholder) {
