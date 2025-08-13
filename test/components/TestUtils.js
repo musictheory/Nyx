@@ -1,6 +1,18 @@
 import { Utils } from "../../src/Utils.js";
 import assert from "node:assert";
 import test from "node:test";
+import os from "node:os";
+
+
+test("Utils.log", t => {
+    Utils.enableLog();
+
+    let didLog = false;
+    console.log = function() { didLog = true };
+    Utils.log("Hello");
+
+    assert(didLog, true);
+});
 
 
 test("Utils.isEqual", t => {

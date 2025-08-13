@@ -24,23 +24,10 @@ function log()
 }
 
 
-function mkdirAndWriteFile(file, contents)
-{
-    fs.mkdirSync(path.dirname(file), { recursive: true });
-    fs.writeFileSync(file, contents);
-}
-
-
 function getProjectPath(file)
 {
     let base = fileURLToPath(new URL("..", import.meta.url));
     return path.resolve(base, file);
-}
-
-
-function getRuntimePath()
-{
-    return getProjectPath("lib/runtime.js");
 }
 
 
@@ -138,12 +125,9 @@ function isEqual(obj1, obj2)
 
 export const Utils = {
     getProjectPath,
-    getRuntimePath,
     
     isEqual,
 
     enableLog,
-    log,
-
-    mkdirAndWriteFile
+    log
 };

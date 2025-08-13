@@ -129,7 +129,13 @@ _inherit(parent)
 {
     function extend(myMap, parentMap) {
         for (let [ key, value ] of parentMap) {
-            myMap.set(key, value);
+            let existingValue = myMap.get(key);
+            
+            if (existingValue && !(value instanceof Runtime) && existingValue !== value) {
+                throw new Error(`Cannot inherit state from parent compiler: '${key}' already exists.`);
+            } else {
+                myMap.set(key, value);
+            }
         }
     }
     
