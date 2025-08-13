@@ -55,3 +55,14 @@ x.foo = 1;
 assert.equal(x["foo"], 1);
 
 
+
+// @test: Throws if end index exceeded
+// @options: { "squeeze": true, "squeeze-end-index": 2 }
+// @error-no-line
+// ============================================================================
+
+class Foo {
+    foo() { }
+    bar() { }
+    baz() { }
+}

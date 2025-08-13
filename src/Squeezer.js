@@ -63,10 +63,6 @@ _addPair(readableName, squeezedName)
         throw new CompilerIssue(`Squeezer conflict for '${readableName}': '${existing}' vs '${squeezedName}'`);
     }
 
-    // if (fromMap.has(squeezedName)) {
-    //     throw new CompilerIssue(`Squeezer conflict for '${readableName}': '${squeezedName}'`);
-    // }    
-
     toMap.set(readableName, squeezedName);
     fromMap.set(squeezedName, readableName);
 

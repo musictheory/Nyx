@@ -94,7 +94,7 @@ class TestCase
             for (let line of testFile.lines) {
                 let m;
 
-                if (m = line.match(/\@error/)) {
+                if (m = line.match(/\@error/) && !line.match(/\@error-no-line/)) {
                     this.expectedErrors.add(`${name}:${lineNumber}`);
 
                 } else if (m = line.match(/\@warning/)) {
@@ -157,8 +157,10 @@ class TestCase
             map.set(`${warning.file}:${warning.line}`, warning);
         }
 
-        if (this.expectsNoLineError && !actualNoLineErrors.length) {
-            assert.fail("Expected an error without a line number.");
+        if (this.expectsNoLineError) {
+            if (!actualNoLineErrors.length) {
+                assert.fail("Expected an error without a line number.");
+            }
         } else {
             assert.deepEqual([ ], actualNoLineErrors);
         }
