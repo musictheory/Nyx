@@ -458,14 +458,23 @@ generate()
         let elements  = node.quasi.quasis;
         let inStrings = elements.map(element => element.value.raw);
         
-        let outStrings = interceptor(inStrings);
+        let outStrings;
+
+        try {
+            outStrings = interceptor(inStrings);
+        } catch (e) {
+            let issue = new CompilerIssue(e.toString(), node);
+            issue.cause = e;
+            throw issue;
+        }
         
         let inLength = inStrings.length;
         let outLength = outStrings.length;
         
         if (inLength != outLength) {
             throw new CompilerIssue(
-                `Interceptor '${tagName}' string count mismatch. ${outLength} vs. ${inLength}`
+                `Interceptor '${tagName}' string count mismatch. ${outLength} vs. ${inLength}`,
+                node
             );
         }
         
