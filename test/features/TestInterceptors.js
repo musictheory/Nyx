@@ -56,7 +56,7 @@ test.suite("Feature: String Interceptors", () => {
 
         let options = {
             "files": [ { path: "1.nx", contents: input } ],
-            [ "interceptors" ]: { "L": interceptLogMessage, "X": badInterceptor }
+            "interceptors": { "L": interceptLogMessage, "X": badInterceptor }
         };
 
         let result = await Nyx.compile(options);
@@ -75,7 +75,7 @@ test.suite("Feature: String Interceptors", () => {
 
         let options = {
             "files": [ { path: "1.nx", contents: input } ],
-            [ "interceptors" ]: { "X": badInterceptor }
+            "interceptors": { "X": badInterceptor }
         };
 
         let result = await Nyx.compile(options);
@@ -83,5 +83,35 @@ test.suite("Feature: String Interceptors", () => {
         assert.equal(result.errors.length, 1);
         assert(result.errors.toString().includes("mismatch"));
     });
+
+    test("With 'check-types' enabled", async t => {
+        let callCount = 0;
+
+        // intercept() should only be called once when making JS code.
+        // Should not be called when we generate TypeScript code.
+        function intercept(strings) {
+            callCount++;
+            return strings;
+        }
+        
+        let input = `
+            let a = "A";
+            let x = I\`1\${a}2\`;
+        `;
+
+        let options = {
+            "files": [ { path: "1.nx", contents: input } ],
+            "interceptors": { "I": intercept },
+            "check-types": true
+        };
+
+        let result = await Nyx.compile(options);
+        
+        assert.equal(result.errors.length, 0);
+        assert.equal(result.warnings.length, 0);
+        
+        assert.equal(callCount, 1);
+    });
+
 });
 

@@ -455,35 +455,37 @@ generate()
         let interceptor = interceptors.get(tagName);
         if (!interceptor) return;
         
-        let elements  = node.quasi.quasis;
-        let inStrings = elements.map(element => element.value.raw);
-        
-        let outStrings;
+        if (language === LanguageEcmascript) {
+            let elements  = node.quasi.quasis;
+            let inStrings = elements.map(element => element.value.raw);
+            
+            let outStrings;
 
-        try {
-            outStrings = interceptor(inStrings);
-        } catch (e) {
-            let issue = new CompilerIssue(e.toString(), node);
-            issue.cause = e;
-            throw issue;
+            try {
+                outStrings = interceptor(inStrings);
+            } catch (e) {
+                let issue = new CompilerIssue(e.toString(), node);
+                issue.cause = e;
+                throw issue;
+            }
+            
+            let inLength = inStrings.length;
+            let outLength = outStrings.length;
+            
+            if (inLength != outLength) {
+                throw new CompilerIssue(
+                    `Interceptor '${tagName}' string count mismatch. ${outLength} vs. ${inLength}`,
+                    node
+                );
+            }
+            
+            for (let i = 0; i < elements.length; i++) {
+                let element = elements[i];
+                modifier.replace(element, outStrings[i]);
+                toSkip.add(element);
+            }
         }
-        
-        let inLength = inStrings.length;
-        let outLength = outStrings.length;
-        
-        if (inLength != outLength) {
-            throw new CompilerIssue(
-                `Interceptor '${tagName}' string count mismatch. ${outLength} vs. ${inLength}`,
-                node
-            );
-        }
-        
-        for (let i = 0; i < elements.length; i++) {
-            let element = elements[i];
-            modifier.replace(element, outStrings[i]);
-            toSkip.add(element);
-        }
-        
+
         modifier.remove(node.tag);
         toSkip.add(node.tag);
     }

@@ -69,7 +69,8 @@ constructor(parents, options)
     this._generatorOptions = new CompilerOptions({
         "output-language": "typechecker",
         "additional-globals": options["additional-globals"],
-        "observers": options["observers"]
+        "observers": options["observers"],
+        "interceptors": options["interceptors"]
     });
     
     let tsTarget = options["typescript-target"] ?? "es2022";
