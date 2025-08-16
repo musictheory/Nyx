@@ -111,6 +111,7 @@ constructor(parents, options)
     });
 
     // Internal options
+    /* node:coverage ignore next 3 */    
     if (options["dev-fast-test"]) {
         tsOptions = { "dev-fast-test": true };
     }
@@ -322,12 +323,13 @@ _makeWorkerArgsArray(inModel)
 check(model, squeezer, defs, files)
 {
     let options     = this._options;
-    let development = options["dev-dump-tmp"];
 
     this._updateDefs(model, squeezer, defs, files);
     this._updateCode(model, squeezer, files);
-    
-    if (development) {
+
+    // For internal development
+    /* node:coverage ignore next 3 */    
+    if (options["dev-dump-tmp"]) {
         this._writeDebugInformation();
     }
 

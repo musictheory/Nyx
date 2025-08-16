@@ -456,7 +456,8 @@ generate()
         if (!interceptor) return;
         
         if (language === LanguageEcmascript) {
-            let elements  = node.quasi.quasis;
+            let quasi = node.quasi;
+            let elements  = quasi.quasis;
             let inStrings = elements.map(element => element.value.raw);
             
             let outStrings;
@@ -479,10 +480,16 @@ generate()
                 );
             }
             
-            for (let i = 0; i < elements.length; i++) {
-                let element = elements[i];
-                modifier.replace(element, outStrings[i]);
-                toSkip.add(element);
+            // Convert to double quote if possible
+            if (outLength == 1 && !outStrings[0].match(/["]/)) {
+                modifier.replace(quasi, `"${outStrings[0]}"`);
+
+            } else {
+                for (let i = 0; i < elements.length; i++) {
+                    let element = elements[i];
+                    modifier.replace(element, outStrings[i]);
+                    toSkip.add(element);
+                }
             }
         }
 

@@ -26,6 +26,10 @@ function badInterceptor(strings) {
     return [ "badInterceptor" ];
 }
 
+// Always throws an error
+function throwsErrorInterceptor(strings) {
+    throw new Error("Moo!");
+}
 
 test.suite("Feature: String Interceptors", () => {
     test("Basic usage", async t => {
@@ -37,6 +41,10 @@ test.suite("Feature: String Interceptors", () => {
             let a = "A";
             let b = "B";
             let c = "C";
+
+            assert.equal(I\`Alpha\`, "Alpha"),
+            assert.equal(I\`Alpha${"-"}Beta\`, "Alpha-Beta");
+            assert.equal(I\`"\`, "\\"");
 
             assert.equal(
                 L\`This\${a}is\${b}a\${c}test\`,
@@ -56,7 +64,11 @@ test.suite("Feature: String Interceptors", () => {
 
         let options = {
             "files": [ { path: "1.nx", contents: input } ],
-            "interceptors": { "L": interceptLogMessage, "X": badInterceptor }
+            "interceptors": {
+                "I": strings => strings,
+                "L": interceptLogMessage,
+                "X": badInterceptor
+            }
         };
 
         let result = await Nyx.compile(options);
@@ -82,6 +94,20 @@ test.suite("Feature: String Interceptors", () => {
         
         assert.equal(result.errors.length, 1);
         assert(result.errors.toString().includes("mismatch"));
+    });
+
+    test("Interceptor throws error", async t => {
+        let input = `let x = throwsError\`foo\``;
+
+        let options = {
+            "files": [ { path: "1.nx", contents: input } ],
+            "interceptors": { "throwsError": throwsErrorInterceptor }
+        };
+
+        let result = await Nyx.compile(options);
+        
+        assert.equal(result.errors.length, 1);
+        assert(result.errors.toString().includes("Moo!"));
     });
 
     test("With 'check-types' enabled", async t => {
