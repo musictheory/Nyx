@@ -126,7 +126,7 @@ constructor(parents, options)
 /* node:coverage disable */
 _writeDebugInformation()
 {
-    let debugTmp = "/tmp/nilscript.typechecker";
+    let debugTmp = "/tmp/nyx.typechecker";
     let usedPaths = new Set();
 
     function formatKey(key) {
@@ -138,6 +138,12 @@ _writeDebugInformation()
 
         usedPaths.add(result);
                
+        return result;
+    }
+    
+    function makeEntryWithoutContents(entry) {
+        let result = Object.assign({ }, entry);
+        result.contents = undefined;
         return result;
     }
 
@@ -153,13 +159,28 @@ _writeDebugInformation()
     fs.mkdirSync(codePath, { recursive: true });
     fs.mkdirSync(defsPath, { recursive: true });
 
+    let defsMapWithoutContents = { };
+    let codeMapWithoutContents = { };
+
     for (let [ key, entry ] of this._defsMap) {
         fs.writeFileSync(defsPath + path.sep + formatKey(key), entry.contents);
+        defsMapWithoutContents[key] = makeEntryWithoutContents(entry);
     }
     
     for (let [ key, entry ] of this._codeMap) {
         fs.writeFileSync(codePath + path.sep + formatKey(key), entry.contents);
+        codeMapWithoutContents[key] = makeEntryWithoutContents(entry);
     }
+
+    fs.writeFileSync(
+        basePath + path.sep + "defsMap.json",
+        JSON.stringify(defsMapWithoutContents, null, "    ")
+    );
+
+    fs.writeFileSync(
+        basePath + path.sep + "codeMap.json",
+        JSON.stringify(codeMapWithoutContents, null, "    ")
+    );
 }
 /* node:coverage enable */
 
@@ -206,7 +227,7 @@ _updateDefs(inModel, inSqueezer, inDefs, inFiles)
         defsMap.set(defsKey, {
             file: defsKey,
             contents: inFile.contents,
-            version: inFile.generatedVersion,
+            version: inFile.version,
             original: inFile.path
         });
     }
@@ -247,8 +268,8 @@ _updateCode(inModel, inSqueezer, inFiles)
 
         let previous = previousCodeMap.get(codeKey);
         if (!previous) previous = { file: codeKey };
-        
-        let entry = this._updateEntry(previous, inFile.generatedVersion, () => {
+
+        let entry = this._updateEntry(previous, inFile.version, () => {
             try {
                 let generator = new Generator(inFile, inModel, inSqueezer, this._generatorOptions);
                 return generator.generate().lines.join("\n");

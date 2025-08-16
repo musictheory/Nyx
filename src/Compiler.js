@@ -41,7 +41,6 @@ constructor()
     this._model   = null;   
     this._parents = [ ];
     this._checker = null;
-    this._checkerPromise = null;
 }
 
 
@@ -430,11 +429,9 @@ async compile(inOptions)
         Utils.enableLog();
     }
 
-    // Extract options.files and convert to a map of path->CompilerFiles
     let files = this._makeFiles(options["files"], previousFiles);
     let defs  = this._makeFiles(options["defs"],  previousDefs);
 
-    // These options aren't extracted
     let optionsCheckTypes     = options["check-types"];
     let optionsOutputLanguage = options["output-language"];
 
@@ -449,9 +446,6 @@ async compile(inOptions)
         for (let file of files) {
             file.needsAll();
         }
-
-        this._checker = null;
-        this._checkerPromise = null;
     }
 
     let parentModels    = [ ];
