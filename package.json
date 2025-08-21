@@ -23,7 +23,7 @@
     "dependencies": {
         "acorn":       "8.x",
         "source-map":  "0.5.x",
-        "typescript":  "5.8.x"
+        "typescript":  "5.9.x"
     },
     "scripts": {
         "test":     "node test/run.js",
