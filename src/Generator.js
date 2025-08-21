@@ -286,7 +286,7 @@ generate()
             
                 let initGuardText = [
                     `[${rootVariable}.g]() {`, // g = afterInitCheckSymbol
-                    node.superClass ? `super[${rootVariable}.g]();` : "",
+                    node.superClass ? `super[${rootVariable}.g]?.();` : "",
                     `${rootVariable}.gi("${className}", [`, // gi = afterInitCheck
 
                     Array.from(currentClass.getProps()).sort().map(name => {
