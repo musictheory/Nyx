@@ -1,0 +1,14 @@
+// @test: Issue 20
+// @options: { "squeeze": true }
+// @typecheck
+// ============================================================================
+
+type Foo = {
+    foo: string,
+    bar: number
+}
+
+let i: Foo = { foo: "foo", bar: 42 };
+i.foo = "FOO";
+i.bar = 42;
+i.baz = null; // @type
