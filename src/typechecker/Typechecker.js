@@ -67,7 +67,6 @@ constructor(parents, options)
     this._codeMap = new Map();
 
     this._generatorOptions = new CompilerOptions({
-        "output-language": "typechecker",
         "additional-globals": options["additional-globals"],
         "observers": options["observers"],
         "interceptors": options["interceptors"]
@@ -271,7 +270,7 @@ _updateCode(inModel, inSqueezer, inFiles)
 
         let entry = this._updateEntry(previous, inFile.version, () => {
             try {
-                let generator = new Generator(inFile, inModel, inSqueezer, this._generatorOptions);
+                let generator = new Generator(inFile, inModel, inSqueezer, this._generatorOptions, true);
                 return generator.generate().lines.join("\n");
             } catch (err) {
                 inFile.error = err;            

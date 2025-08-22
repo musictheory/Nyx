@@ -18,15 +18,11 @@ import { CompilerIssue } from "./model/CompilerIssue.js";
 
 import path from "node:path";
 
-const LanguageEcmascript  = "ecmascript";
-const LanguageTypechecker = "typechecker";
-const LanguageNone        = "none";
-
 
 export class Generator {
 
 
-constructor(file, model, squeezer, options)
+constructor(file, model, squeezer, options, forTypechecker)
 {
     this._file     = file;
     this._model    = model;
@@ -34,17 +30,10 @@ constructor(file, model, squeezer, options)
     this._squeezer = squeezer;
     this._options  = options;
 
+    this._forTypechecker = !!forTypechecker;
+
     let inlines = new Map();
     let targetTags = new Map();
-
-    let language = options["output-language"];
-    if (language && language.match(/typechecker/)) {
-        this._language = LanguageTypechecker;
-    } else if (language && language.match(/none/)) {
-        this._language = LanguageNone;
-    } else {
-        this._language = LanguageEcmascript;
-    }
 
     for (let { name, raw } of model.globals.values()) {
         if (!inlines.has(name)) {
@@ -72,9 +61,10 @@ generate()
     let model        = this._model;
     let modifier     = this._modifier;
     let squeezer     = this._squeezer;
-    let language     = this._language;
     let options      = this._options;
     let filePath     = this._file.path;
+
+    let forTypechecker = this._forTypechecker;
 
     let inlines         = this._inlines;
     let interceptors    = this._interceptors;
@@ -106,7 +96,7 @@ generate()
     {
         let type = node.type;
         
-        if (language != LanguageTypechecker && (
+        if (!forTypechecker && (
             type == Syntax.TSTypeAnnotation       ||
             type == Syntax.NXEnumDeclaration      ||
             type == Syntax.NXInterfaceDeclaration ||
@@ -199,7 +189,7 @@ generate()
         if (shouldRemove(node.declaration)) {
             modifier.remove(node.start, node.declaration.start);
 
-        } else if (language == LanguageEcmascript) {
+        } else if (!forTypechecker) {
             let exportedNames = [ ];
 
             if (node.declaration.type == Syntax.VariableDeclaration) {
@@ -245,19 +235,19 @@ generate()
 
             let targetTagValue = targetTags.get(node.nx_targetTag.name);
             
-            if ((targetTagValue === false) && (language === LanguageEcmascript)) {
+            if ((targetTagValue === false) && !forTypechecker) {
                 modifier.replace(node, `const ${node.id.name} = undefined;`);
                 toSkip.add(node.body);
                 return;
             }
             
-            if ((targetTagValue !== undefined) && (language === LanguageTypechecker)) {
+            if ((targetTagValue !== undefined) && forTypechecker) {
                 modifier.replace(node.start, node.id.start, `const ${node.id.name} = N$F_Maybe(class`);
                 modifier.replace(node.body.end, node.end, ")");
             }
         }
 
-        if (language === LanguageEcmascript) {
+        if (!forTypechecker) {
             let rootVariable = SymbolUtils.RootVariable;
 
             let constructorText;
@@ -314,7 +304,7 @@ generate()
 
     function handlePropertyDefinition(node)
     {
-        if (language !== LanguageTypechecker) {
+        if (!forTypechecker) {
             if (node.readonly) {
                 let replacement = node.static ? "static" : "";
                 modifier.replace(node.start, node.key.start, replacement);                
@@ -327,7 +317,7 @@ generate()
         isStaticStack.push(currentIsStatic);
         currentIsStatic = node.static;
         
-        if (language === LanguageTypechecker) {
+        if (forTypechecker) {
             if (node.kind == "set" && node.value.annotation) {
                 // Allow "void" annotation on setter
                 if (node.value.annotation?.value?.name?.name == "void") {
@@ -360,7 +350,7 @@ generate()
                 continue                
             }
 
-            if (language == LanguageTypechecker) {
+            if (forTypechecker) {
                 let toPath = declaration.object?.location?.path;
 
                 if (!toPath) {
@@ -380,7 +370,7 @@ generate()
         let replacement = "";
         
         if (replacements.length) {
-            replacement = (language == LanguageTypechecker) ?
+            replacement = forTypechecker ?
             replacements.join("") :
             `const ${replacements.join(",")};`
         }
@@ -431,7 +421,7 @@ generate()
                 funcName = squeezer.squeeze(funcName);
             }
 
-            if (language === LanguageTypechecker) {
+            if (forTypechecker) {
                 let replacement = `()).${funcName}(`;
             
                 modifier.replace(node.start, node.callee.start, "((new ");
@@ -455,7 +445,7 @@ generate()
         let interceptor = interceptors.get(tagName);
         if (!interceptor) return;
         
-        if (language === LanguageEcmascript) {
+        if (!forTypechecker) {
             let quasi = node.quasi;
             let elements  = quasi.quasis;
             let inStrings = elements.map(element => element.value.raw);
@@ -538,7 +528,7 @@ generate()
             let scopeDeclaration = scopeManager.getValue(name);
 
             if (
-                language === LanguageEcmascript &&
+                !forTypechecker &&
                 scopeDeclaration?.importType == ScopeManager.ImportType.Future
             ) {
                 replacement = SymbolUtils.getImportExpression(name, squeezer);
@@ -565,7 +555,7 @@ generate()
             if (node.annotation) toSkip.add(node.annotation);
             if (node.question)   toSkip.add(node.question);
         } else {
-            if (node.question && language != LanguageTypechecker) {
+            if (node.question && !forTypechecker) {
                 modifier.remove(node.question)
                 toSkip.add(node.question);
             }
@@ -595,7 +585,7 @@ generate()
                 toSkip.add(node.property);
 
                 let replacement;
-                if (language == LanguageTypechecker) {
+                if (forTypechecker) {
                     replacement = nsEnum.name + "." + member.name;
                 } else {
                     if (typeof member.value == "string") {
@@ -625,21 +615,21 @@ generate()
 
     function handleNXAsExpression(node)
     {
-        if (language !== LanguageTypechecker) {
+        if (!forTypechecker) {
             modifier.remove(node.expression.end, node.annotation.start);
         }
     }
 
     function handleNXNonNullExpression(node)
     {
-        if (language !== LanguageTypechecker) {
+        if (!forTypechecker) {
             modifier.remove(node.expression.end, node.end);
         }
     }
 
     function handleTSTypeAnnotation(node, parent)
     {
-        if (language === LanguageTypechecker) {
+        if (forTypechecker) {
             modifier.replace(node, TypePrinter.print(node, true));
         } else {
             modifier.remove(node);
@@ -661,7 +651,7 @@ generate()
         let params = node.params;
 
         // Remove "this" parameter when generating non-TypeScript
-        if ((language !== LanguageTypechecker) && (params[0]?.name == "this")) {
+        if (!forTypechecker && (params[0]?.name == "this")) {
             modifier.remove(params[0].start, params[1]?.start ?? params[0].end);
             toSkip.add(params[0]);
         }
@@ -714,7 +704,7 @@ generate()
         let staticString = isStatic ? "static" : "";
         
         let annotation = "";
-        if (language === LanguageTypechecker) {
+        if (forTypechecker) {
         
             if (node.annotation) {
                 let type = TypePrinter.print(node.annotation);
@@ -794,7 +784,7 @@ generate()
         if (node.targetTag) {
             let targetTagValue = targetTags.get(node.targetTag.name);
             
-            if ((targetTagValue === false) && (language === LanguageEcmascript)) {
+            if ((targetTagValue === false) && !forTypechecker) {
                 modifier.remove(node);
                 return Traverser.SkipNode;
             }
@@ -803,7 +793,7 @@ generate()
             toSkip.add(node.targetTag);
         }
     
-        if (language === LanguageTypechecker && baseName == "init") {
+        if (forTypechecker && baseName == "init") {
             if (node.annotation) {
                 modifier.remove(node.annotation);
                 toSkip.add(node.annotation);
@@ -854,7 +844,7 @@ generate()
 
         if (type === Syntax.ImportDeclaration) {
             handleImportDeclaration(node);
-            if (language != LanguageTypechecker) return Traverser.SkipNode;
+            if (!forTypechecker) return Traverser.SkipNode;
 
         } else if (type === Syntax.ExportNamedDeclaration) {
             handleExportDeclaration(node);
@@ -930,7 +920,7 @@ generate()
 
     let lines = modifier.finish().split("\n");
 
-    if (lines.length && (language === LanguageEcmascript)) {
+    if (lines.length && !forTypechecker) {
         lines[0] = `(function(){ "use strict";` + lines[0];
         lines[lines.length - 1] += "})();";    
     }

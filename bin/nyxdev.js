@@ -172,7 +172,7 @@ function main()
     options["dev-omit-runtime"] = true;
     
     if (parsedArgs.values["typescript"] || parsedArgs.values["ts"]) {
-        options["output-language"] = "typechecker";
+        options["dev-output-typescript"] = true;
     
     } else if (parsedArgs.values["dump-function-map"]) {
         options["allow-private-options"] = true;

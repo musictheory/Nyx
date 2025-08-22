@@ -280,7 +280,9 @@ async _generateJavaScript(files, model, squeezer, options)
             if (!file.generatedLines) {
                 Log(`Generating ${file.path}`);
 
-                let generator = new Generator(file, model, squeezer, options);
+                let forTypechecker = !!options["dev-output-typescript"];
+
+                let generator = new Generator(file, model, squeezer, options, forTypechecker);
                 let result    = generator.generate();
 
                 file.generatedLines    = result.lines;
@@ -432,8 +434,7 @@ async compile(inOptions)
     let files = this._makeFiles(options["files"], previousFiles);
     let defs  = this._makeFiles(options["defs"],  previousDefs);
 
-    let optionsCheckTypes     = options["check-types"];
-    let optionsOutputLanguage = options["output-language"];
+    let optionsCheckTypes = options["check-types"];
 
     // If remaining options changed, invalidate everything
     //
@@ -531,20 +532,14 @@ async compile(inOptions)
         }
 
         // Run generator
-        if (optionsOutputLanguage != "none") {
-            await this._generateJavaScript(files, model, squeezer, options);
-        }
+        await this._generateJavaScript(files, model, squeezer, options);
 
         // Concatenate and map output
-        if (optionsOutputLanguage != "none") {
-            let results = await this._finish(files, options);
+        let results = await this._finish(files, options);
 
-            if (results) {
-                outputCode        = results.code;
-                outputSourceMap   = results.map;
-                outputFunctionMap = results.functionMap;
-            }
-        }
+        outputCode        = results.code;
+        outputSourceMap   = results.map;
+        outputFunctionMap = results.functionMap;
 
     } catch (err) {
         caughtError = err;

@@ -29,7 +29,6 @@ for (let [ key, value ] of Object.entries({
     "append":                    { v: vPrependAppend, i: true }, // Content/lines to append, not compiled
 
     // Output options
-    "output-language":           { }, // string, Output language ('none' or 'es5' public, 'typechecker' for debugging only)
     "include-map":               { v: vBoolean }, // boolean, include 'map' key in results object
     "source-map-file":           { v: vString  }, // string, Output source map file name
     "source-map-root":           { v: vString  }, // string, Output source map root URL
