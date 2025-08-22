@@ -56,6 +56,16 @@ assert.throws(() => { foo.p = 157; });
 
 
 
+
+// @test: Error if backing already exists
+// ============================================================================
+
+class Foo {
+    #foo: number = 157;
+    readonly prop foo: number = 42; // @error
+}
+
+
 // @test: static prop is unsupported
 // ============================================================================
 

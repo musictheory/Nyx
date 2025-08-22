@@ -224,7 +224,8 @@ build()
             let isComputed = node.computed;
             
             if (!isComputed) {
-                currentClass.addField(node.key.name, isStatic);
+                let prefix = (node.key.type == Syntax.PrivateIdentifier) ? "#" : "";
+                currentClass.addField(`${prefix}${node.key.name}`, isStatic);
             }
         }
     }
@@ -266,10 +267,6 @@ build()
     function handleNXPropDefinition(node)
     {
         if (currentClass) {
-            if (node.static) {
-                throw new CompilerIssue("static cannot be used with prop.", node);
-            }
-            
             currentClass.hasFuncOrProp = true;
             currentClass.addProp(node.key.name);
         }

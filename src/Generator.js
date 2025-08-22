@@ -664,15 +664,28 @@ generate()
     function handleNXPropDefinition(node)
     {
         let name = node.key.name;
-        let isStatic = node.static;
-
-        toSkip.add(node.key);
-        toSkip.add(node.annotation);
 
         let rootVariable = SymbolUtils.RootVariable;
 
-        let isPrivate  = (node.modifier == "private");
-        let isReadOnly = (node.modifier == "readonly");
+        let isPrivate   = (node.modifier == "private");
+        let isReadOnly  = (node.modifier == "readonly");
+        let wantsGetter =  !isPrivate;
+        let wantsSetter = (!isPrivate && !isReadOnly);
+
+        let propertyName = name;
+        let backingName  = `#${name}`;
+
+        if (squeezer) {
+            propertyName = squeezer.squeeze(propertyName);
+        }
+        
+        if (node.static) {
+            throw new CompilerIssue("static cannot be used with prop.", node);
+        }
+
+        if (currentClass.hasField(backingName, false)) {
+            throw new CompilerIssue(`Backing field '${backingName}' already declared`, node);
+        }
 
         let isObserved = false;
         let observerArg = "";
@@ -686,36 +699,32 @@ generate()
             observerArg = JSON.stringify(observerArg);
             isObserved = true;
         }
-
-        let wantsGetter =  !isPrivate;
-        let wantsSetter = (!isPrivate && !isReadOnly);
-
-        let propertyName = name;
-        let backingName  = `#${name}`;
-
-        if (squeezer) {
-            propertyName = squeezer.squeeze(propertyName);
-        }
-
-        let typePlaceholder = null;
+    
+        //          prop foo                             ;
+        //          prop foo         = "foo"             ;
+        // readonly prop foo: string = "foo"             ;
+        // ^---------------^                ^-----------^
+        //  replaced with leftString        replaced with rightString
         
-        let result = "";
-        
-        let staticString = isStatic ? "static" : "";
-        
+        let leftString  = "";
+        let rightString = ";";
+
         let annotation = "";
+
         if (forTypechecker) {
-        
-            if (node.annotation) {
-                let type = TypePrinter.print(node.annotation);
-                annotation = `: ${type}`;
-            } else if (node.value) {
-                typePlaceholder = SymbolUtils.getTypePlaceholder(propertyName, squeezer);
-                annotation = `: typeof this.${typePlaceholder}`;
-            }
+            let typePlaceholder = SymbolUtils.getTypePlaceholder(propertyName, squeezer);
+
+            annotation = `: typeof this.${typePlaceholder}`;
+            
+            leftString  += `${typePlaceholder}`;
+            rightString += ` ${backingName}${annotation}`;
+            rightString += node.value ? ` = this.${typePlaceholder};` : ";";
+
+        } else {
+            leftString += `${backingName}`;
         }
 
-        if (wantsSetter && !currentClass.hasSetter(name, isStatic)) {
+        if (wantsSetter && !currentClass.hasSetter(name, false)) {
             let s = [ ];
 
             if (isObserved) {
@@ -734,12 +743,10 @@ generate()
                 s.push(`${rootVariable}.gs("${propertyName}", arg);`);
             }
 
-            let argType = "";
-
-            result += `${staticString} set ${propertyName}(arg${annotation}) {${s.join(" ")} } `;
+            rightString += ` set ${propertyName}(arg${annotation}) { ${s.join(" ")} }`;
         }
             
-        if (wantsGetter && !currentClass.hasGetter(name, isStatic)) {
+        if (wantsGetter && !currentClass.hasGetter(name, false)) {
             let g = [ ];
 
             if (undefinedGuards.has("get")) {
@@ -748,28 +755,19 @@ generate()
 
             g.push(`return this.${backingName};`);
 
-            result += `${staticString} get ${propertyName}()${annotation} {${g.join(" ")} } `;
+            rightString += ` get ${propertyName}()${annotation} { ${g.join(" ")} }`;
         }
+        
+        let rightmostNode = node.value ?? node.annotation ?? node.key;
+        
+        modifier.replace(node.start, node.key.end, leftString);
+        modifier.replace(rightmostNode.end, node.end, rightString);
 
-        if (typePlaceholder) {
-            result += `${staticString} ${typePlaceholder}`;
-        } else {
-            result += `${staticString} ${backingName}${annotation}`;
-        }
-
-        if (node.value) {
-            result += " = ";
-            modifier.replace(node.start, node.value.start, result);
-
-            if (typePlaceholder) {
-                modifier.replace(
-                    node.value.end, node.end,
-                    `;${staticString} ${backingName}${annotation} = this.${typePlaceholder};`
-                );
-            }
-
-        } else {
-            modifier.replace(node, result);
+        toSkip.add(node.key);
+        
+        if (!forTypechecker && node.annotation) {
+            modifier.remove(node.annotation);    
+            toSkip.add(node.annotation);    
         }
     }
 
