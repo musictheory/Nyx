@@ -1,0 +1,9 @@
+// @test: Issue 8
+// @typecheck
+// ============================================================================
+
+type Foo = {
+    foo: string,
+    bar: NonExistentType[] // @type
+};
+
