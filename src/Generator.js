@@ -9,7 +9,6 @@
 import { Modifier     } from "./Modifier.js";
 import { Syntax       } from "./ast/Tree.js";
 import { Traverser    } from "./ast/Traverser.js";
-import { TypePrinter  } from "./ast/TypePrinter.js";
 import { ScopeManager } from "./ScopeManager.js";
 import { SymbolUtils  } from "./SymbolUtils.js";
 
@@ -629,13 +628,22 @@ generate()
 
     function handleTSTypeAnnotation(node, parent)
     {
-        if (forTypechecker) {
-            modifier.replace(node, TypePrinter.print(node, true));
-        } else {
+        if (!forTypechecker) {
             modifier.remove(node);
+            toSkip.add(node.value);
         }
+    }
 
-        toSkip.add(node.value);
+    function handleNXNullableType(node, parent)
+    {
+        let rightString = " | null)";
+
+        if (parent.type === Syntax.TSTupleType) {
+            rightString += "?";
+        }
+    
+        modifier.insert(node.start, "(");
+        modifier.replace(node.argument.end, node.end, rightString);
     }
 
     function handleNXGlobalDeclaration(node)
@@ -867,6 +875,9 @@ generate()
 
         } else if (type === Syntax.TSTypeAnnotation) {
             handleTSTypeAnnotation(node, parent);
+
+        } else if (type === Syntax.NXNullableType) {
+            handleNXNullableType(node, parent);
 
         } else if (type === Syntax.NXGlobalDeclaration) {
             handleNXGlobalDeclaration(node);

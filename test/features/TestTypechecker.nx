@@ -139,6 +139,7 @@ class Foo {
 }
 
 
+
 // @test: Test 'type' as function
 // @typecheck
 // ============================================================================
@@ -149,6 +150,21 @@ function type(x: string) {
 }
 
 assert.equal(type("Foo"), "Bar");
+
+
+
+// @test: '?' nullable type
+// @typecheck
+// ============================================================================
+
+let foo: string? = null;
+let bar: string? = undefined; // @type
+let baz: string? = 5; // @type
+let moo: string? = "moo";
+
+let t1: [ string?, string? ] = [ null, undefined ];
+let t2: [ string?, string? ] = [ null ];
+let t3: [ string ]           = [ null ]; //@type
 
 
 

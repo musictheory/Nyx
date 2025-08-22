@@ -8,7 +8,6 @@
 
 import { Syntax        } from "./ast/Tree.js";
 import { Traverser     } from "./ast/Traverser.js";
-import { TypePrinter   } from "./ast/TypePrinter.js";
 import { ScopeManager  } from "./ScopeManager.js";
 import { SymbolUtils   } from "./SymbolUtils.js";
 import { Model         } from "./model/Model.js";

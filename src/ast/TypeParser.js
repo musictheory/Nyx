@@ -572,7 +572,7 @@ tsParseArrayTypeOrHigher()
     let type = this.tsParseNonArrayType();
 
     const makeNullable = (inType) => {
-        const node = this.startNode(inType.start);
+        const node = this.startNodeAt(inType.start);
         node.argument = inType;
         return this.finishNode(node, Syntax.NXNullableType);
     };
@@ -591,7 +591,7 @@ tsParseArrayTypeOrHigher()
                 }
 
             } else {
-                const node = this.startNode(type.start);
+                const node = this.startNodeAt(type.start);
                 node.object = type;
                 node.property = this.tsParseType();
                 this.expect(tt.bracketR);
