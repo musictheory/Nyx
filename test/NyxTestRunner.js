@@ -189,6 +189,11 @@ class TestCase
             options["defs"] = support.getTypecheckerDefs();
         }
         
+        // Add squeeze-builtins if undefined and squeeze requested
+        if (options["squeeze"] && (options["squeeze-builtins"] === undefined)) {
+            options["squeeze-builtins"] = support.getSqueezeBuiltins();
+        }
+        
         test(name, async () => {
             if (this.configError) {
                 throw this.configError;            
@@ -243,8 +248,7 @@ class TestCase
         // If runSqueezer is true, run again with squeezer enabled
         if (this.runSqueezer) {
             this._run(`${name} + squeeze`, Object.assign(options, {
-                "squeeze": true,
-                "squeeze-builtins": support.getSqueezeBuiltins()
+                "squeeze": true
             }));
         }
     }

@@ -41,6 +41,33 @@ let x = f.moo;
 assert.equal(reports.length, 2);
 
 
+// @test: 'init' + squeeze
+// @options: { "undefined-guards": [ "init" ], "squeeze": true }
+// ============================================================================
+
+import { Nyx };
+
+let reports = [ ];
+
+Nyx.reportUndefined = function(e) {
+    reports.push(e);
+};
+
+class ClassNameToNotLeak {
+prop foo: number;
+}
+
+assert.equal(reports.length, 0);
+
+let f = new ClassNameToNotLeak();
+
+assert.equal(reports.length, 1);
+
+let reportString0 = reports[0].toString();
+
+assert( reportString0.includes("has undefined props"));
+assert(!reportString0.includes("ClassNameToNotLeak"));
+
 
 // @test: 'init' guards with subclasses
 // @options: { "undefined-guards": [ "init" ] }
