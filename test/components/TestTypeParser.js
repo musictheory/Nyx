@@ -4,9 +4,9 @@ import assert from "node:assert";
 import test from "node:test";
 
 
-function testTypes()
+function testSupportedTypes()
 {
-    let types = [
+    let supportedTypes = [
         // Numeric literals
         "-5", "5", "3.14", "3e4",
         
@@ -23,6 +23,7 @@ function testTypes()
         "(string)", "(\nnumber)",
         
         // Tuples
+        "[ ]",
         "[ string, string ]",
         "[ string, string? ]",
         "[ string, ...string[] ]",
@@ -55,10 +56,10 @@ function testTypes()
         "(a: string, b: string) =>\n number"
     ];
 
-    for (let i = 0; i < types.length; i++) {
-        for (let j = 0; j < types.length; j++) {
-            let a = types[i];
-            let b = types[j];
+    for (let i = 0; i < supportedTypes.length; i++) {
+        for (let j = 0; j < supportedTypes.length; j++) {
+            let a = supportedTypes[i];
+            let b = supportedTypes[j];
             
             let input = `function x(a: ${a}, b: ${a}): ${b} { let x: ${b} = null, y; }`;
 
@@ -87,6 +88,34 @@ function testTypes()
                 throw err;
             }
         }
+    }
+}
+
+
+function testUnsupportedTypes()
+{
+    let unsupportedTypes = [
+        // Labelled tuples
+        "[ start: number, end: number ]",
+
+        // Import type
+        'import("foo")',
+        
+        // Typeof with import
+        'typeof import("foo")',
+        
+        // Misc. parse errors
+        "[ , ]",
+        "[ null null ]",
+        "-foo",
+        "+42"
+    ];
+
+    for (let i = 0; i < unsupportedTypes.length; i++) {
+        let a = unsupportedTypes[i];
+        let input = `let x: ${a}`;
+
+        assert.throws(() => { Parser.parse(input); }, `'${a}'`);
     }
 }
 
@@ -126,7 +155,8 @@ function testBindingPatterns()
 
 
 test.suite("TypeParser", () => {
-    test("Types", t => { testTypes(); });
+    test("Supported Types",   t => { testSupportedTypes();   });
+    test("Unsupported Types", t => { testUnsupportedTypes(); });
 
 //  Currently unsupported
 //  test("Binding Patterns", t => { testBindingPatterns(); });
