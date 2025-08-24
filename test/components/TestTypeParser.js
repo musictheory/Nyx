@@ -70,9 +70,9 @@ function testTypes()
                 
                 assert(decl);
                 assert(body);
-                assert(decl.params[0]?.annotation);
-                assert(decl.params[1]?.annotation);
-                assert(decl.annotation);
+                assert(decl.params[0]?.typeAnnotation);
+                assert(decl.params[1]?.typeAnnotation);
+                assert(decl.returnType);
                 assert(body);
                 assert(body[0].declarations.length == 2);
                 assert(body[0].declarations[0].init.raw == "null");
@@ -109,7 +109,7 @@ function testBindingPatterns()
                     
             assert(decl);
             assert(body);
-            assert(decl.params[0]?.annotation);
+            assert(decl.params[0]?.typeAnnotation);
 
         } catch (cause) {
             let err = new Error(`Error parsing: "${line}"`);

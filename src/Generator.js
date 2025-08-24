@@ -317,11 +317,11 @@ generate()
         currentIsStatic = node.static;
         
         if (forTypechecker) {
-            if (node.kind == "set" && node.value.annotation) {
+            if (node.kind == "set" && node.value.returnType) {
                 // Allow "void" annotation on setter
-                if (node.value.annotation?.value?.name?.name == "void") {
-                    modifier.remove(node.value.annotation);
-                    toSkip.add(node.value.annotation);
+                if (node.value.returnType?.typeAnnotation?.name?.name == "void") {
+                    modifier.remove(node.value.returnType);
+                    toSkip.add(node.value.returnType);
                 }
             }
         }
@@ -501,7 +501,7 @@ generate()
             parent.type == Syntax.MethodDefinition ||
             parent.type == Syntax.PropertyDefinition ||
             parent.type == Syntax.MemberExpression ||
-            parent.type == Syntax.TSObjectMember
+            parent.type == Syntax.NXObjectTypeMember
         );
 
         // Special case: handle shorthand syntax
@@ -551,8 +551,8 @@ generate()
         if (replacement) {
             modifier.replace(node, replacement);
 
-            if (node.annotation) toSkip.add(node.annotation);
-            if (node.question)   toSkip.add(node.question);
+            if (node.typeAnnotation) toSkip.add(node.typeAnnotation);
+            if (node.question) toSkip.add(node.question);
         } else {
             if (node.question && !forTypechecker) {
                 modifier.remove(node.question)
@@ -615,7 +615,7 @@ generate()
     function handleNXAsExpression(node)
     {
         if (!forTypechecker) {
-            modifier.remove(node.expression.end, node.annotation.start);
+            modifier.remove(node.expression.end, node.typeAnnotation.start);
         }
     }
 
@@ -643,7 +643,7 @@ generate()
         }
     
         modifier.insert(node.start, "(");
-        modifier.replace(node.argument.end, node.end, rightString);
+        modifier.replace(node.typeAnnotation.end, node.end, rightString);
     }
 
     function handleNXGlobalDeclaration(node)
@@ -751,7 +751,7 @@ generate()
                 s.push(`${rootVariable}.gs("${propertyName}", arg);`);
             }
 
-            rightString += ` set ${propertyName}(arg${annotation}) { ${s.join(" ")} }`;
+            rightString += `  set ${propertyName}(arg${annotation}) { ${s.join(" ")} }`;
         }
             
         if (wantsGetter && !currentClass.hasGetter(name, false)) {
@@ -766,16 +766,16 @@ generate()
             rightString += ` get ${propertyName}()${annotation} { ${g.join(" ")} }`;
         }
         
-        let rightmostNode = node.value ?? node.annotation ?? node.key;
+        let rightmostNode = node.value ?? node.typeAnnotation ?? node.key;
         
         modifier.replace(node.start, node.key.end, leftString);
         modifier.replace(rightmostNode.end, node.end, rightString);
 
         toSkip.add(node.key);
         
-        if (!forTypechecker && node.annotation) {
-            modifier.remove(node.annotation);    
-            toSkip.add(node.annotation);    
+        if (!forTypechecker && node.typeAnnotation) {
+            modifier.remove(node.typeAnnotation);    
+            toSkip.add(node.typeAnnotation);    
         }
     }
 
@@ -800,9 +800,9 @@ generate()
         }
     
         if (forTypechecker && baseName == "init") {
-            if (node.annotation) {
-                modifier.remove(node.annotation);
-                toSkip.add(node.annotation);
+            if (node.returnType) {
+                modifier.remove(node.returnType);
+                toSkip.add(node.returnType);
             }
             
             let bodyNodes = node.body.body;

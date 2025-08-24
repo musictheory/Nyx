@@ -86,57 +86,50 @@ const ESTreeStructure = {
 
 
 const NyxTreeStructure = {
-    NXAsExpression:         [ "expression", "annotation" ],
+    NXAsExpression:         [ "expression", "typeAnnotation" ],
     NXAtIdentifier:         [ ],
-    NXBindingAtom:          [ "id", "annotation" ],
     NXEnumDeclaration:      [ "members" ],
     NXEnumMember:           [ "id", "init" ],
-    NXFuncDefinition:       [ "key", "params", "annotation", "body" ],
-    NXFuncParameter:        [ "label", "name", "annotation" ],
+    NXFuncDefinition:       [ "key", "params", "returnType", "body" ],
+    NXFuncParameter:        [ "label", "name", "typeAnnotation" ],
     NXGlobalDeclaration:    [ "declaration" ],
     NXInterfaceBody:        [ "body" ],
     NXInterfaceDeclaration: [ "id", "body" ],
     NXNamedArgument:        [ "name", "argument" ],
     NXNonNullExpression:    [ "expression" ],
-    NXPropDefinition:       [ "key", "value", "annotation" ],
+    NXPropDefinition:       [ "key", "value", "typeAnnotation" ],
     NXPunctuation:          [ ],
-    NXTypeDeclaration:      [ "id", "params", "annotation" ],
+    NXTypeDeclaration:      [ "id", "params", "typeAnnotation" ],
 };
 
 
 /*
-    The ESTree AST uses "type" to indicate a Node's type; TypeScript's AST
-    uses "kind". This causes naming conflicts when porting TypeScript nodes
-    to our syntax.
+    TypeAnnotationTreeStructure follows the TSESTree spec:
+    https://typescript-eslint.io/packages/typescript-estree/ast-spec
     
-    Naming Rules:
-    1) If a type's node structure resembles an existing ESTree structure,
-       match the ESTree structure.
-    2) Remove "type" as a prefix or suffix. "objectType" becomes "type".
-    3) "types" of a collection becomes "elements".
-    4) "type" referencing a return value becomes "annotation".
-    5) "type" referencing an operator-like argument becomes "argument".
+    Unlike acorn-typescript, we use "NXParenthesizedType" instead of
+    "TSParenthesizedType" as it is not part of the TSESTree spec.
 */
 const TypeAnnotationTreeStructure = {
-    NXNullableType:      [ "argument" ],
+    NXNullableType:      [ "typeAnnotation" ],
+    NXParenthesizedType: [ "typeAnnotation" ],
+    NXObjectTypeMember:  [ "key", "typeAnnotation" ],
+    NXObjectType:        [ "members" ],
 
-    TSArrayType:         [ "element" ],
-    TSFunctionType:      [ "params", "annotation" ],
-    TSIndexedAccessType: [ "object", "property" ],
-    TSIntersectionType:  [ "elements" ],
+    TSArrayType:         [ "elementType" ],
+    TSFunctionType:      [ "params", "returnType" ],
+    TSIndexedAccessType: [ "objectType", "indexType" ],
+    TSIntersectionType:  [ "types" ],
     TSLiteralType:       [ "literal" ],
-    TSObjectMember:      [ "key", "annotation" ],
-    TSObjectType:        [ "members" ],
-    TSParenthesizedType: [ "argument" ],
     TSQualifiedName:     [ "left", "right" ],
-    TSRestType:          [ "argument" ],
+    TSRestType:          [ "typeAnnotation" ],
     TSThisType:          [ ],
-    TSTupleType:         [ "elements" ],
-    TSTypeAnnotation:    [ "value" ],
-    TSTypeOperator:      [ "operator", "argument" ],
-    TSTypeQuery:         [ "name", "arguments" ],
-    TSTypeReference:     [ "name", "arguments" ],
-    TSUnionType:         [ "elements" ],
+    TSTupleType:         [ "elementTypes" ],
+    TSTypeAnnotation:    [ "typeAnnotation" ],
+    TSTypeOperator:      [ "operator", "typeAnnotation" ],
+    TSTypeQuery:         [ "name", "typeArguments" ],
+    TSTypeReference:     [ "name", "typeArguments" ],
+    TSUnionType:         [ "types" ],
 };
 
 
@@ -147,17 +140,17 @@ export const TreeStructure = Object.assign({ },
 );
 
 
-// Extend ESTree nodes to include "annotation"
+// Extend ESTree nodes to include "returnType" or "typeAnnotation"
 {
     function addAfter(array, existing, value) {
         array.splice(array.indexOf(existing), 0, value);
     }
 
-    addAfter( TreeStructure.FunctionDeclaration, "params", "annotation" );
-    addAfter( TreeStructure.FunctionExpression,  "params", "annotation" );
+    addAfter( TreeStructure.FunctionDeclaration, "params", "returnType" );
+    addAfter( TreeStructure.FunctionExpression,  "params", "returnType" );
 
-    TreeStructure.Identifier.push("annotation");
-    TreeStructure.PropertyDefinition.push("annotation");
+    TreeStructure.Identifier.push("typeAnnotation");
+    TreeStructure.PropertyDefinition.push("typeAnnotation");
 }
 
 

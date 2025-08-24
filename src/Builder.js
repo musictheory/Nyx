@@ -373,8 +373,8 @@ build()
     {
         let reference = null;
 
-        if (node.annotation.value.type == Syntax.TSTypeReference) {
-            reference = node.annotation.value.name.name;        
+        if (node.typeAnnotation.typeAnnotation.type == Syntax.TSTypeReference) {
+            reference = node.typeAnnotation.typeAnnotation.name.name;        
         }
         
         let modelType = new Model.Type(makeLocation(node), node.id.name, reference);

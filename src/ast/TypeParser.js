@@ -268,7 +268,7 @@ tsParseTypeAnnotation(eatColon = true, t = this.startNode())
     this.tsInType = true;
     if (eatColon) this.expect(tt.colon);
     t.colon = eatColon;
-    t.value = this.tsParseType();
+    t.typeAnnotation = this.tsParseType();
     this.tsInType = previousInType;
 
     return this.finishNode(t, Syntax.TSTypeAnnotation);
@@ -289,7 +289,7 @@ tsFillSignature(returnToken, signature)
 
     if (returnTokenRequired || this.type === returnToken) {
         this.expect(returnToken);
-        signature.annotation = this.tsParseTypeAnnotation(/* eatColon */ false);
+        signature.returnType = this.tsParseTypeAnnotation(/* eatColon */ false);
     }
 }
 
@@ -308,17 +308,17 @@ tsParseUnionOrIntersectionType(kind, parseConstituentType, operator)
 {
     const node = this.startNode();
     const hasLeadingOperator = this.eat(operator);
-    const elements = [];
+    const types = [];
 
     do {
-        elements.push(parseConstituentType());
+        types.push(parseConstituentType());
     } while (this.eat(operator));
     
-    if (elements.length === 1 && !hasLeadingOperator) {
-        return elements[0];
+    if (types.length === 1 && !hasLeadingOperator) {
+        return types[0];
     }
     
-    node.elements = elements;
+    node.types = types;
 
     return this.finishNode(node, kind);
 }
@@ -331,7 +331,7 @@ tsParseTypeOperator()
     const operator = this.value;
     this.next(); // eat operator
     node.operator = operator;
-    node.argument = this.tsParseTypeOperatorOrHigher();
+    node.typeAnnotation = this.tsParseTypeOperatorOrHigher();
 
     return this.finishNode(node, Syntax.TSTypeOperator);
 }
@@ -360,7 +360,7 @@ tsParseLiteralTypeNode()
         this.unexpected();
     }
 
-    // Verify that literal is either Syntax.Liter
+    // Verify that literal is either Syntax.Literal or a negative number
     let isNegativeNumber = (
         literal.type == Syntax.UnaryExpression &&
         literal.operator == "-" &&
@@ -394,7 +394,7 @@ tsParseTypeQuery()
     }
 
     if (!this.tsHasPrecedingLineBreak() && this.tsMatchLeftRelational()) {
-        node.arguments = this.tsParseTypeArguments();
+        node.typeArguments = this.tsParseTypeArguments();
     }
 
     return this.finishNode(node, Syntax.TSTypeQuery);
@@ -404,7 +404,7 @@ tsParseTypeQuery()
 // tsParseMappedTypeParameter() removed
 // tsParseMappedType() removed
 
-// TSObjectType is a simplified version of TSTypeLiteral
+// NXObjectType is a simplified version of TSTypeLiteral
 tsParseObjectType()
 {
     const node = this.startNode();
@@ -421,16 +421,16 @@ tsParseObjectType()
             this.parseIdent(true);
         
         member.optional = this.eat(tt.question);
-        member.annotation = this.tsParseTypeAnnotation();
+        member.typeAnnotation = this.tsParseTypeAnnotation();
         
-        node.members.push(this.finishNode(member, Syntax.TSObjectMember));
+        node.members.push(this.finishNode(member, Syntax.NXObjectTypeMember));
         
         if (this.type != tt.braceR) {
             this.expect(tt.comma);
         }
     }
 
-    return this.finishNode(node, Syntax.TSObjectType);
+    return this.finishNode(node, Syntax.NXObjectType);
 }
 
 
@@ -450,7 +450,7 @@ tsParseTupleElementType()
 
     if (rest) {
         const restNode = this.startNodeAt(startPos, startLoc);
-        restNode.argument = type;
+        restNode.typeAnnotation = type;
         type = this.finishNode(restNode, Syntax.TSRestType);
     }
 
@@ -464,7 +464,7 @@ tsParseTupleType()
 
     this.expect(tt.bracketL);
 
-    node.elements = this.tsParseDelimitedList(
+    node.elementTypes = this.tsParseDelimitedList(
         "TupleElementTypes",
         this.tsParseTupleElementType.bind(this)
     );
@@ -486,7 +486,7 @@ tsParseTypeReference()
     node.name = name;
     
     if (!sKeywordNames.has(name.name) && !this.tsHasPrecedingLineBreak() && this.tsMatchLeftRelational()) {
-        node.arguments = this.tsParseTypeArguments()
+        node.typeArguments = this.tsParseTypeArguments()
     }
     
     return this.finishNode(node, Syntax.TSTypeReference);
@@ -509,9 +509,9 @@ tsParseParenthesizedType()
 {
     const node = this.startNode();
     this.expect(tt.parenL);
-    node.argument = this.tsParseType();
+    node.typeAnnotation = this.tsParseType();
     this.expect(tt.parenR);
-    return this.finishNode(node, Syntax.TSParenthesizedType);
+    return this.finishNode(node, Syntax.NXParenthesizedType);
 }
 
 
@@ -573,7 +573,7 @@ tsParseArrayTypeOrHigher()
 
     const makeNullable = (inType) => {
         const node = this.startNodeAt(inType.start);
-        node.argument = inType;
+        node.typeAnnotation = inType;
         return this.finishNode(node, Syntax.NXNullableType);
     };
 
@@ -581,7 +581,7 @@ tsParseArrayTypeOrHigher()
         if (this.eat(tt.bracketL)) {
             if (this.type === tt.bracketR) {
                 const node = this.startNodeAt(type.start);
-                node.element = type;
+                node.elementType = type;
                 this.expect(tt.bracketR);
                 type = this.finishNode(node, Syntax.TSArrayType);
                 
@@ -592,8 +592,8 @@ tsParseArrayTypeOrHigher()
 
             } else {
                 const node = this.startNodeAt(type.start);
-                node.object = type;
-                node.property = this.tsParseType();
+                node.objectType = type;
+                node.indexType = this.tsParseType();
                 this.expect(tt.bracketR);
                 type = this.finishNode(node, Syntax.TSIndexedAccessType);
             }

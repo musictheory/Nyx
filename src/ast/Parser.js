@@ -92,7 +92,7 @@ parseBindingAtom()
         }
 
         if (this.type == tt.colon) {
-            result.annotation = this.tsParseTypeAnnotation();
+            result.typeAnnotation = this.tsParseTypeAnnotation();
             this.finishNode(result, Syntax.Identifier);
         }
     }
@@ -115,7 +115,7 @@ parseClassField(node)
     }
 
     if (this.type == tt.colon) {
-        node.annotation = this.tsParseTypeAnnotation();
+        node.typeAnnotation = this.tsParseTypeAnnotation();
     }
 
     super.parseClassField(node);
@@ -194,7 +194,7 @@ parseImport(node)
 parseFunctionBody(node, isArrowFunction, isMethod, forInit)
 {
     if (this.type == tt.colon) {
-        node.annotation = this.tsParseTypeAnnotation();
+        node.returnType = this.tsParseTypeAnnotation();
     }
     
     // Allow body-less functions and methods
@@ -211,7 +211,7 @@ parseParenItem(item)
     let result = super.parseParenItem(item);
 
     if (this.type == tt.colon) {
-        result.annotation = this.tsParseTypeAnnotation();
+        result.typeAnnotation = this.tsParseTypeAnnotation();
     }
 
     return result;
@@ -301,7 +301,7 @@ parseExprOp(left, leftStartPos, leftStartLoc, minPrec, forInit)
         
         node.expression = left;
         this.expectContextual("as");
-        node.annotation = this.tsParseTypeAnnotation(false);
+        node.typeAnnotation = this.tsParseTypeAnnotation(false);
 
         // See reScan_lt_gt() in acorn-typescript
         if (this.type === tt.relational) {
@@ -374,7 +374,7 @@ nxMaybeParseTypeDefinition()
 
     this.expect(tt.eq);
     
-    node.annotation = this.tsParseTypeAnnotation(false);
+    node.typeAnnotation = this.tsParseTypeAnnotation(false);
 
     this.semicolon();
 
@@ -602,7 +602,7 @@ nxParseProp(node, isStatic, modifier, observer)
     node.observer = observer;
     
     node.key = this.parseIdent(true);
-    node.annotation = (this.type == tt.colon) ? this.tsParseTypeAnnotation() : null;
+    node.typeAnnotation = (this.type == tt.colon) ? this.tsParseTypeAnnotation() : null;
 
     if (this.eat(tt.eq)) {
         let scope = this.currentThisScope();
@@ -649,11 +649,10 @@ nxParseFuncParameter()
     }
         
     if (this.type == tt.colon) {
-        node.annotation = (this.type == tt.colon) ? this.tsParseTypeAnnotation() : null;
+        node.typeAnnotation = (this.type == tt.colon) ? this.tsParseTypeAnnotation() : null;
     } else {
-        node.annotation = null;
+        node.typeAnnotation = null;
     }
-    
 
     return this.finishNode(node, Syntax.NXFuncParameter);
 }
@@ -682,7 +681,7 @@ nxParseFunc(node, isStatic, isAsync, targetTag)
     }
     
     if (this.type == tt.colon) {
-        node.annotation = this.tsParseTypeAnnotation();
+        node.returnType = this.tsParseTypeAnnotation();
     }
 
     if (this.type == tt.braceL) {
