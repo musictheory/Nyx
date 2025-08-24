@@ -751,7 +751,7 @@ generate()
                 s.push(`${rootVariable}.gs("${propertyName}", arg);`);
             }
 
-            rightString += `  set ${propertyName}(arg${annotation}) { ${s.join(" ")} }`;
+            rightString += ` set ${propertyName}(arg${annotation}) { ${s.join(" ")} }`;
         }
             
         if (wantsGetter && !currentClass.hasGetter(name, false)) {
