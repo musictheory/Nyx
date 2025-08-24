@@ -1,5 +1,7 @@
-import { Parser } from "../../src/ast/Parser.js";
+import { Parser     } from "../../src/ast/Parser.js";
 import { TypeParser } from "../../src/ast/TypeParser.js";
+import { Traverser  } from "../../src/ast/Traverser.js";
+
 import assert from "node:assert";
 import test from "node:test";
 
@@ -53,7 +55,9 @@ function testSupportedTypes()
         "(a: string) => number",
         "(a: string, b: string) => number",
         "(a: string, b: string) \n=> number",
-        "(a: string, b: string) =>\n number"
+        "(a: string, b: string) =>\n number",
+        
+        "new () => Foo"
     ];
 
     for (let i = 0; i < supportedTypes.length; i++) {
@@ -62,13 +66,15 @@ function testSupportedTypes()
             let b = supportedTypes[j];
             
             let input = `function x(a: ${a}, b: ${a}): ${b} { let x: ${b} = null, y; }`;
+            let ast;
 
             try {
-                let program = Parser.parse(input);
+                ast = Parser.parse(input);
                 
-                let decl = program?.body?.[0];
+                let decl = ast?.body?.[0];
                 let body = decl?.body?.body;
-                
+
+                assert(ast);
                 assert(decl);
                 assert(body);
                 assert(decl.params[0]?.typeAnnotation);
@@ -87,6 +93,20 @@ function testSupportedTypes()
 
                 throw err;
             }
+
+            try {
+                let traverser = new Traverser(ast);
+                traverser.traverse(() => { });
+
+            } catch (cause) {
+                let err = new Error(`Error traversing: "${input}"`);
+
+                err.cause = cause;
+                err.input = input;
+                err.inputAt = input.slice(cause.pos);
+                
+                throw err;
+            }
         }
     }
 }
@@ -95,7 +115,7 @@ function testSupportedTypes()
 function testUnsupportedTypes()
 {
     let unsupportedTypes = [
-        // Labelled tuples
+        // Labeled tuples
         "[ start: number, end: number ]",
 
         // Import type

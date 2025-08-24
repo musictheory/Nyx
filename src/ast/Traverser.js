@@ -30,7 +30,10 @@ _traverse(node, parent)
     
     let keys = TreeStructure[node.type];
     if (!keys) {
-        throw new Error(`Unknown node type: ${node.type}`);
+        let e = new Error(`Unknown node type: ${node.type}`);
+        e.node = node;
+        e.parent = parent;
+        throw e;
     }
     
     for (let key of keys) {

@@ -70,20 +70,18 @@ tsHasPrecedingLineBreak()
 }
 
 
-tsParseBindingListForSignature()
+tsParseEntityName()
 {
-    return super.parseBindingList(tt.parenR, true, true).map(pattern => {
-        if (
-            pattern.type !== "Identifier" &&
-            pattern.type !== "RestElement" &&
-            pattern.type !== "ObjectPattern" &&
-            pattern.type !== "ArrayPattern"
-        ) {
-            this.unexpected(pattern.start);
-        }
+    let entity = this.parseIdent(true);
 
-        return pattern;
-    });
+    while (this.eat(tt.dot)) {
+        const node = this.startNodeAt(entity.start);
+        node.left = entity;
+        node.right = this.parseIdent(true);
+        entity = this.finishNode(node, Syntax.TSQualifiedName);
+    }
+
+    return entity;
 }
 
 
@@ -156,21 +154,6 @@ tsLookAhead(f)
     return res;
 }
       
-
-tsParseEntityName()
-{
-    let entity = this.parseIdent(true);
-
-    while (this.eat(tt.dot)) {
-        const node = this.startNodeAt(entity.start);
-        node.left = entity;
-        node.right = this.parseIdent(true);
-        entity = this.finishNode(node, Syntax.TSQualifiedName);
-    }
-
-    return entity;
-}
-
 
 tsSkipParameterStart()
 {
@@ -253,6 +236,23 @@ tsIsStartOfFunctionType()
     );
 }
 
+
+tsParseBindingListForSignature()
+{
+    return super.parseBindingList(tt.parenR, true, true).map(pattern => {
+        if (
+            pattern.type !== "Identifier" &&
+            pattern.type !== "RestElement" &&
+            pattern.type !== "ObjectPattern" &&
+            pattern.type !== "ArrayPattern"
+        ) {
+            this.unexpected(pattern.start);
+        }
+
+        return pattern;
+    });
+}
+
       
 tsParseThisTypeNode()
 {
@@ -294,13 +294,18 @@ tsFillSignature(returnToken, signature)
 }
 
 
-tsParseFunctionType()
+tsParseFunctionOrConstructorType(type)
 {
     const node = this.startNode();
-    
+
+    if (type === Syntax.TSConstructorType) {
+        node.abstract = false;
+        this.next(); // eat 'new'
+    }
+   
     this.tsFillSignature(tt.arrow, node);
     
-    return this.finishNode(node, Syntax.TSFunctionType);
+    return this.finishNode(node, type);
 }
 
 
@@ -644,11 +649,11 @@ tsParseUnionTypeOrHigher()
 tsParseNonConditionalType()
 {
     if (this.tsIsStartOfFunctionType()) {
-        return this.tsParseFunctionType();
+        return this.tsParseFunctionOrConstructorType(Syntax.TSFunctionType);
     } 
     
     if (this.type === tt._new) {
-        this.unexpected();
+        return this.tsParseFunctionOrConstructorType(Syntax.TSConstructorType);
     }
     
     return this.tsParseUnionTypeOrHigher();

@@ -117,6 +117,7 @@ const TypeAnnotationTreeStructure = {
     NXObjectType:        [ "members" ],
 
     TSArrayType:         [ "elementType" ],
+    TSConstructorType:   [ "params", "returnType" ],
     TSFunctionType:      [ "params", "returnType" ],
     TSIndexedAccessType: [ "objectType", "indexType" ],
     TSIntersectionType:  [ "types" ],
@@ -126,7 +127,7 @@ const TypeAnnotationTreeStructure = {
     TSThisType:          [ ],
     TSTupleType:         [ "elementTypes" ],
     TSTypeAnnotation:    [ "typeAnnotation" ],
-    TSTypeOperator:      [ "operator", "typeAnnotation" ],
+    TSTypeOperator:      [ "typeAnnotation" ],
     TSTypeQuery:         [ "name", "typeArguments" ],
     TSTypeReference:     [ "name", "typeArguments" ],
     TSUnionType:         [ "types" ],
