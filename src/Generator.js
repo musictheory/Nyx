@@ -319,7 +319,7 @@ generate()
         if (forTypechecker) {
             if (node.kind == "set" && node.value.returnType) {
                 // Allow "void" annotation on setter
-                if (node.value.returnType?.typeAnnotation?.name?.name == "void") {
+                if (node.value.returnType?.typeAnnotation?.type === Syntax.TSVoidKeyword) {
                     modifier.remove(node.value.returnType);
                     toSkip.add(node.value.returnType);
                 }

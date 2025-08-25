@@ -15,11 +15,13 @@ const SupportedTypeAnnotations = [
     // String constants
     "'foo'", '"foo"',
 
-    // Keyword/undefined
-    "void", "null", "undefined",
+    // Keywords
+    "any", "boolean", "bigint", "never", "null",
+    "never", "number", "object", "string",
+    "symbol", "undefined", "unknown", "void",
     
     "this",
-    "string", "number", "Foo",
+    "Foo",
     "string[]", "string[\n]",
 
     "(string)", "(\nnumber)",

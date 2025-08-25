@@ -2,7 +2,7 @@
     TypeParser.js
     
     This file is heavily based on acorn-typescript:
-    https://github.com/TyrealHu/acorn-typescript
+    https://github.com/sveltejs/acorn-typescript
     MIT License
 
     Subclass of Acorn's Parser to parse type annotations
@@ -15,6 +15,9 @@ import {
 } from "acorn";
 
 import { Syntax } from "./Tree.js";
+
+
+const skipWhiteSpace = /(?:\s|\/\/.*|\/\*[^]*?\*\/)*/g;
 
 
 function tokenIsIdentifier(token)
@@ -32,10 +35,33 @@ function nonNull(x)
 }
 
 
-const sKeywordNames = new Set([
-    "any", "boolean", "bigint", "never", "number", "null",
-    "object", "string", "symbol", "undefined", "void"
-]);
+function keywordTypeFromName(value)
+{
+    switch (value) {
+    case "any":
+        return Syntax.TSAnyKeyword;
+    case "boolean":
+        return Syntax.TSBooleanKeyword;
+    case "bigint":
+        return Syntax.TSBigIntKeyword;
+    case "never":
+        return Syntax.TSNeverKeyword;
+    case "number":
+        return Syntax.TSNumberKeyword;
+    case "object":
+        return Syntax.TSObjectKeyword;
+    case "string":
+        return Syntax.TSStringKeyword;
+    case "symbol":
+        return Syntax.TSSymbolKeyword;
+    case "undefined":
+        return Syntax.TSUndefinedKeyword;
+    case "unknown":
+        return Syntax.TSUnknownKeyword;
+    default:
+        return undefined;
+    }
+}
 
 
 export class TypeParser extends AcornParser {
@@ -59,6 +85,31 @@ saveState()
 restoreState(state)
 {
     throw new Error("TypeParser is abstract and needs a restoreState() implementation.");
+}
+
+
+tsStartNodeAtNode(type)
+{
+    return super.startNodeAt(type.start, type.loc.start);
+}
+
+
+tsNextTokenStart()
+{
+    return this.tsNextTokenStartSince(this.pos);
+}
+
+
+tsNextTokenStartSince(pos)
+{
+    skipWhiteSpace.lastIndex = pos;
+    return skipWhiteSpace.test(this.input) ? skipWhiteSpace.lastIndex : pos;
+}
+
+            
+tsLookaheadCharCode()
+{
+    return this.input.charCodeAt(this.tsNextTokenStart());
 }
 
 
@@ -88,8 +139,10 @@ tsParseEntityName()
     let entity = this.parseIdent(true);
 
     while (this.eat(tt.dot)) {
-        const node = this.startNodeAt(entity.start);
+        const node = this.tsStartNodeAtNode(entity);
+
         node.left = entity;
+
         node.right = this.parseIdent(true);
         entity = this.finishNode(node, Syntax.TSQualifiedName);
     }
@@ -160,7 +213,6 @@ tsParseDelimitedList(kind, parseElement)
       
 tsLookAhead(f)
 {
-    // saveState() and restoreState() are implemented in Parser.js
     const state = this.saveState();
     const result = f();
     this.restoreState(state);
@@ -170,7 +222,6 @@ tsLookAhead(f)
 
 tsTryParse(f)
 {
-    // saveState() and restoreState() are implemented in Parser.js
     const state = this.saveState();
     const result = f();
 
@@ -327,7 +378,7 @@ tsParseThisTypePredicate(lhs)
 {
     this.next();
 
-    const node = this.startNodeAt(lhs.start);
+    const node = this.tsStartNodeAtNode(lhs);
     node.parameterName = lhs;
     node.typeAnnotation = this.tsParseTypeAnnotation(/* eatColon */ false);
     node.asserts = false;
@@ -628,11 +679,10 @@ tsParseTupleType()
 tsParseTypeReference()
 {
     const node = this.startNode();
-    const name = this.tsParseEntityName();
     
-    node.name = name;
+    node.typeName = this.tsParseEntityName();
     
-    if (!sKeywordNames.has(name.name) && !this.tsHasPrecedingLineBreak() && this.tsMatchLeftRelational()) {
+    if (!this.tsHasPrecedingLineBreak() && this.tsMatchLeftRelational()) {
         node.typeArguments = this.tsParseTypeArguments()
     }
     
@@ -697,19 +747,32 @@ tsParseNonArrayType()
     
     default:
         {
-            if (
-                this.type !== tt._void &&
-                this.type !== tt._null &&
-                !tokenIsIdentifier(this.type)
-            ) {
-                this.unexpected();
-            }
+            const type = this.type;
+            const isIdentifier = tokenIsIdentifier(type);
 
-            // Rather than TSVoidKeyword / TSStringKeyword / etc, we pass everything
-            // to tsParseTypeReference() and use Identifier nodes
-            return this.tsParseTypeReference();
+            if (isIdentifier || type === tt._void || type === tt._null) {
+                let nodeType;
+
+                if (type === tt._void) {
+                    nodeType = Syntax.TSVoidKeyword;
+                } else if (type === tt._null) {
+                    nodeType = Syntax.TSNullKeyword;
+                } else if (isIdentifier) {
+                    nodeType = keywordTypeFromName(this.value);
+                }
+
+                if (nodeType !== undefined && this.tsLookaheadCharCode() !== 46) { // '.'
+                    const node = this.startNode();
+                    this.next();
+                    return this.finishNode(node, nodeType);
+                }
+
+                return this.tsParseTypeReference();
+            }
         }
     }
+
+    this.unexpected();
 }
 
 
@@ -718,7 +781,7 @@ tsParseArrayTypeOrHigher()
     let type = this.tsParseNonArrayType();
 
     const makeNullable = (inType) => {
-        const node = this.startNodeAt(inType.start);
+        const node = this.tsStartNodeAtNode(inType);
         node.typeAnnotation = inType;
         return this.finishNode(node, Syntax.NXNullableType);
     };
@@ -726,7 +789,7 @@ tsParseArrayTypeOrHigher()
     while (!this.tsHasPrecedingLineBreak()) {
         if (this.eat(tt.bracketL)) {
             if (this.type === tt.bracketR) {
-                const node = this.startNodeAt(type.start);
+                const node = this.tsStartNodeAtNode(type);
                 node.elementType = type;
                 this.expect(tt.bracketR);
                 type = this.finishNode(node, Syntax.TSArrayType);
@@ -737,7 +800,7 @@ tsParseArrayTypeOrHigher()
                 }
 
             } else {
-                const node = this.startNodeAt(type.start);
+                const node = this.tsStartNodeAtNode(type);
                 node.objectType = type;
                 node.indexType = this.tsParseType();
                 this.expect(tt.bracketR);

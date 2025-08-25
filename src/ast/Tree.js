@@ -116,14 +116,23 @@ const TypeAnnotationTreeStructure = {
     NXObjectTypeMember:  [ "key", "typeAnnotation" ],
     NXObjectType:        [ "members" ],
 
+    TSAnyKeyword:        [ ],
     TSArrayType:         [ "elementType" ],
+    TSBigIntKeyword:     [ ],
+    TSBooleanKeyword:    [ ],
     TSConstructorType:   [ "params", "returnType" ],
     TSFunctionType:      [ "params", "returnType" ],
     TSIndexedAccessType: [ "objectType", "indexType" ],
     TSIntersectionType:  [ "types" ],
     TSLiteralType:       [ "literal" ],
+    TSNeverKeyword:      [ ],
+    TSNullKeyword:       [ ],
+    TSNumberKeyword:     [ ],
+    TSObjectKeyword:     [ ],
     TSQualifiedName:     [ "left", "right" ],
     TSRestType:          [ "typeAnnotation" ],
+    TSStringKeyword:     [ ],
+    TSSymbolKeyword:     [ ],
     TSThisType:          [ ],
     TSTupleType:         [ "elementTypes" ],
     TSTypeAnnotation:    [ "typeAnnotation" ],
@@ -131,7 +140,10 @@ const TypeAnnotationTreeStructure = {
     TSTypePredicate:     [ "typeAnnotation" ],
     TSTypeQuery:         [ "name", "typeArguments" ],
     TSTypeReference:     [ "name", "typeArguments" ],
+    TSUndefinedKeyword:  [ ],
     TSUnionType:         [ "types" ],
+    TSUnknownKeyword:    [ ],
+    TSVoidKeyword:       [ ]
 };
 
 
