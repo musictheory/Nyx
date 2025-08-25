@@ -194,7 +194,7 @@ parseImport(node)
 parseFunctionBody(node, isArrowFunction, isMethod, forInit)
 {
     if (this.type == tt.colon) {
-        node.returnType = this.tsParseTypeAnnotation();
+        node.returnType = this.tsParseTypeOrTypePredicateAnnotation(tt.colon);
     }
     
     // Allow body-less functions and methods
@@ -681,7 +681,7 @@ nxParseFunc(node, isStatic, isAsync, targetTag)
     }
     
     if (this.type == tt.colon) {
-        node.returnType = this.tsParseTypeAnnotation();
+        node.returnType = this.tsParseTypeOrTypePredicateAnnotation(tt.colon);
     }
 
     if (this.type == tt.braceL) {

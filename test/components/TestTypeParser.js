@@ -5,137 +5,176 @@ import { Traverser  } from "../../src/ast/Traverser.js";
 import assert from "node:assert";
 import test from "node:test";
 
+Error.stackTraceLimit = 50;
 
-function testSupportedTypes()
+
+const SupportedTypeAnnotations = [
+    // Numeric literals
+    "-5", "5", "3.14", "3e4",
+    
+    // String constants
+    "'foo'", '"foo"',
+
+    // Keyword/undefined
+    "void", "null", "undefined",
+    
+    "this",
+    "string", "number", "Foo",
+    "string[]", "string[\n]",
+
+    "(string)", "(\nnumber)",
+    
+    // Tuples
+    "[ ]",
+    "[ string, string ]",
+    "[ string, string? ]",
+    "[ string, ...string[] ]",
+    
+    // Object
+    "{ a: string, b: string }",
+    
+    // Intersection / Union
+    "Foo | null",
+    "Foo | Bar", "Foo & Bar",
+    "Foo\n| Bar", "Foo &\nBar",
+    "|Foo&Foo",  "&Foo|Bar",
+
+    "Foo<A>", "Foo<A, B>",
+    "Foo<Bar<A>, B>",
+    "Foo<Bar<Baz<A>,B>,C>",
+    "Foo<Bar<A,B>>",
+    "Foo<Bar<Baz<A,B,C>>>",
+    
+    "typeof Foo",
+    "typeof Foo.bar",
+    "typeof\nFoo",
+    "readonly number[]",
+    "readonly\nnumber[]",
+    
+    "() => void",
+    "(a: string) => number",
+    "(a: string, b: string) => number",
+    "(a: string, b: string) \n=> number",
+    "(a: string, b: string) =>\n number",
+
+    "(a: string, ...rest) => number",
+    "(a: string, [ b, c ]) => number",
+    
+    "([,]) => void",
+    
+    "new () => Foo"
+];
+
+const UnsupportedTypeAnnotations = [
+    // Labeled tuples
+    "[ start: number, end: number ]",
+
+    // Import type
+    'import("foo")',
+    
+    // Typeof with import
+    'typeof import("foo")'
+];
+
+const InvalidTypeAnnotations = [
+    "(a, !) => void",
+    "[ , ]",
+    "[ null null ]",
+    "-foo",
+    "+42"
+];
+
+
+const SupportedTypePredicates = [
+    "this is Foo",
+    "x is boolean",
+    "asserts x",
+    "asserts this is Foo"
+];
+
+
+const InvalidTypePredicates = [
+    "asserts 42"
+];
+
+
+function parseAndTraverse(input, callback)
 {
-    let supportedTypes = [
-        // Numeric literals
-        "-5", "5", "3.14", "3e4",
-        
-        // String constants
-        "'foo'", '"foo"',
+    let ast;
 
-        // Keyword/undefined
-        "void", "null", "undefined",
-        
-        "this",
-        "string", "number", "Foo",
-        "string[]", "string[\n]",
+    try {
+        ast = Parser.parse(input);
 
-        "(string)", "(\nnumber)",
-        
-        // Tuples
-        "[ ]",
-        "[ string, string ]",
-        "[ string, string? ]",
-        "[ string, ...string[] ]",
-        
-        // Object
-        "{ a: string, b: string }",
-        
-        // Intersection / Union
-        "Foo | null",
-        "Foo | Bar", "Foo & Bar",
-        "Foo\n| Bar", "Foo &\nBar",
-        "|Foo&Foo",  "&Foo|Bar",
+        assert(ast);
+        assert(ast.body);
+        assert(ast.body[0]);
 
-        "Foo<A>", "Foo<A, B>",
-        "Foo<Bar<A>, B>",
-        "Foo<Bar<Baz<A>,B>,C>",
-        "Foo<Bar<A,B>>",
-        "Foo<Bar<Baz<A,B,C>>>",
-        
-        "typeof Foo",
-        "typeof Foo.bar",
-        "typeof\nFoo",
-        "readonly number[]",
-        "readonly\nnumber[]",
-        
-        "() => void",
-        "(a: string) => number",
-        "(a: string, b: string) => number",
-        "(a: string, b: string) \n=> number",
-        "(a: string, b: string) =>\n number",
-        
-        "new () => Foo"
-    ];
+        callback(ast.body[0]);
 
-    for (let i = 0; i < supportedTypes.length; i++) {
-        for (let j = 0; j < supportedTypes.length; j++) {
-            let a = supportedTypes[i];
-            let b = supportedTypes[j];
+    } catch (cause) {
+        let err = new Error(`Error parsing: "${input}"`);
+
+        err.cause = cause;
+        err.input = input;
+        err.inputAt = input.slice(cause.pos);
+
+        throw err;
+    }
+
+    try {
+        let traverser = new Traverser(ast);
+        traverser.traverse(() => { });
+
+    } catch (cause) {
+        let err = new Error(`Error traversing: "${input}"`);
+
+        err.cause = cause;
+        err.input = input;
+        err.inputAt = input.slice(cause.pos);
+        
+        throw err;
+    }
+}
+
+
+function testTypeAnnotations(annotations)
+{
+    for (let i = 0; i < annotations.length; i++) {
+        for (let j = 0; j < annotations.length; j++) {
+            let a = annotations[i];
+            let b = annotations[j];
             
             let input = `function x(a: ${a}, b: ${a}): ${b} { let x: ${b} = null, y; }`;
-            let ast;
 
-            try {
-                ast = Parser.parse(input);
-                
-                let decl = ast?.body?.[0];
-                let body = decl?.body?.body;
+            parseAndTraverse(input, decl => {
+                let body = decl.body?.body;
 
-                assert(ast);
-                assert(decl);
-                assert(body);
                 assert(decl.params[0]?.typeAnnotation);
                 assert(decl.params[1]?.typeAnnotation);
                 assert(decl.returnType);
                 assert(body);
                 assert(body[0].declarations.length == 2);
                 assert(body[0].declarations[0].init.raw == "null");
-
-            } catch (cause) {
-                let err = new Error(`Error parsing: "${input}"`);
-
-                err.cause = cause;
-                err.input = input;
-                err.inputAt = input.slice(cause.pos);
-
-                throw err;
-            }
-
-            try {
-                let traverser = new Traverser(ast);
-                traverser.traverse(() => { });
-
-            } catch (cause) {
-                let err = new Error(`Error traversing: "${input}"`);
-
-                err.cause = cause;
-                err.input = input;
-                err.inputAt = input.slice(cause.pos);
-                
-                throw err;
-            }
+            });
         }
     }
 }
 
 
-function testUnsupportedTypes()
+function testTypePredicates(predicates)
 {
-    let unsupportedTypes = [
-        // Labeled tuples
-        "[ start: number, end: number ]",
+    for (let i = 0; i < predicates.length; i++) {
+        let a = predicates[i];
+        let input = `function x(x): ${a} { let y = null; }`;
 
-        // Import type
-        'import("foo")',
-        
-        // Typeof with import
-        'typeof import("foo")',
-        
-        // Misc. parse errors
-        "[ , ]",
-        "[ null null ]",
-        "-foo",
-        "+42"
-    ];
+        parseAndTraverse(input, decl => {
+            let body = decl.body?.body;
 
-    for (let i = 0; i < unsupportedTypes.length; i++) {
-        let a = unsupportedTypes[i];
-        let input = `let x: ${a}`;
-
-        assert.throws(() => { Parser.parse(input); }, `'${a}'`);
+            assert(decl.returnType);
+            assert(body);
+            assert(body[0].declarations.length == 1);
+            assert(body[0].declarations[0].init.raw == "null");
+        });
     }
 }
 
@@ -175,8 +214,18 @@ function testBindingPatterns()
 
 
 test.suite("TypeParser", () => {
-    test("Supported Types",   t => { testSupportedTypes();   });
-    test("Unsupported Types", t => { testUnsupportedTypes(); });
+    test("Annotations", t => { testTypeAnnotations( SupportedTypeAnnotations ); });
+    test("Predicates",  t => { testTypePredicates(  SupportedTypePredicates  ); });
+
+    test("Unsupported/Invalid", t => {
+        for (let a of [ ...UnsupportedTypeAnnotations, ...InvalidTypeAnnotations ]) {
+            assert.throws(() => { Parser.parse(`let x: ${a}`); }, `'${a}'`);
+        }
+
+        for (let p of [ ...InvalidTypePredicates ]) {
+            assert.throws(() => { Parser.parse(`function x(): ${p} { }`); }, `'${p}'`);
+        }
+    });
 
 //  Currently unsupported
 //  test("Binding Patterns", t => { testBindingPatterns(); });

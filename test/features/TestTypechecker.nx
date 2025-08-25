@@ -99,6 +99,20 @@ takesNonNullString(x2!);
 
 
 
+// @test: type predicates
+// @typecheck
+// ============================================================================
+
+function isArray(x: any): x is any[]
+{
+    return Array.isArray(x);
+}
+
+let x = { }, y = 0;
+if (isArray(x)) y += x.length;
+
+
+
 // @test: Test 'extends' on 'interface'
 // @typecheck
 // ============================================================================

@@ -128,6 +128,7 @@ const TypeAnnotationTreeStructure = {
     TSTupleType:         [ "elementTypes" ],
     TSTypeAnnotation:    [ "typeAnnotation" ],
     TSTypeOperator:      [ "typeAnnotation" ],
+    TSTypePredicate:     [ "typeAnnotation" ],
     TSTypeQuery:         [ "name", "typeArguments" ],
     TSTypeReference:     [ "name", "typeArguments" ],
     TSUnionType:         [ "types" ],

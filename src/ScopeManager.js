@@ -109,7 +109,9 @@ _declareIdentifier(node)
 _declareIdentifiersIn(nodes)
 {
     for (let node of nodes) {
-        this._declareIdentifier(node);
+        if (node) {
+            this._declareIdentifier(node);
+        }
     }
 }
 

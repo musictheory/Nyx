@@ -42,7 +42,7 @@ export class TypeParser extends AcornParser {
 
 readToken_lt_gt(code)
 {
-    if (this.tsInType) {
+    if (this._tsInType) {
         return this.finishOp(tt.relational, 1);
     }
     
@@ -62,11 +62,24 @@ restoreState(state)
 }
 
 
+tsResetStartLocation(node, start, startLoc)
+{
+    node.start = start;
+    node.loc.start = startLoc;
+}
+
+
 tsHasPrecedingLineBreak()
 {
     return lineBreak.test(
         this.input.slice(this.lastTokEnd, this.start)
     );
+}
+
+
+tsResetStartLocationFromNode(node, locationNode)
+{
+    this.tsResetStartLocation(node, locationNode.start, locationNode.loc.start);
 }
 
 
@@ -149,9 +162,24 @@ tsLookAhead(f)
 {
     // saveState() and restoreState() are implemented in Parser.js
     const state = this.saveState();
-    const res = f();
+    const result = f();
     this.restoreState(state);
-    return res;
+    return result;
+}
+
+
+tsTryParse(f)
+{
+    // saveState() and restoreState() are implemented in Parser.js
+    const state = this.saveState();
+    const result = f();
+
+    if (result !== undefined && result !== false) {
+        return result;
+    } else {
+        this.restoreState(state);
+        return undefined;
+    }
 }
       
 
@@ -240,6 +268,9 @@ tsIsStartOfFunctionType()
 tsParseBindingListForSignature()
 {
     return super.parseBindingList(tt.parenR, true, true).map(pattern => {
+        // This check appears to be unnecessary, as parseBindingList() 
+        // always returns one of the listed node types
+        /* node:coverage disable */
         if (
             pattern.type !== "Identifier" &&
             pattern.type !== "RestElement" &&
@@ -248,11 +279,29 @@ tsParseBindingListForSignature()
         ) {
             this.unexpected(pattern.start);
         }
+        /* node:coverage enable */
 
         return pattern;
     });
 }
 
+
+tsParseTypePredicateAsserts()
+{
+    if (!this.isContextual("asserts")) {
+        return false;
+    }
+
+    // Removed containsEsc logic as it is handled by isContextual()
+    this.next();
+
+    if (!tokenIsIdentifier(this.type) && this.type !== tt._this) {
+        return false;
+    }
+
+    return true;
+}
+            
       
 tsParseThisTypeNode()
 {
@@ -264,14 +313,107 @@ tsParseThisTypeNode()
 
 tsParseTypeAnnotation(eatColon = true, t = this.startNode())
 {
-    let previousInType = this.tsInType;
-    this.tsInType = true;
-    if (eatColon) this.expect(tt.colon);
-    t.colon = eatColon;
-    t.typeAnnotation = this.tsParseType();
-    this.tsInType = previousInType;
+    this.tsInType(() => {
+        if (eatColon) this.expect(tt.colon);
+        t.colon = eatColon;
+        t.typeAnnotation = this.tsParseType();
+    });
 
     return this.finishNode(t, Syntax.TSTypeAnnotation);
+}
+
+
+tsParseThisTypePredicate(lhs)
+{
+    this.next();
+
+    const node = this.startNodeAt(lhs.start);
+    node.parameterName = lhs;
+    node.typeAnnotation = this.tsParseTypeAnnotation(/* eatColon */ false);
+    node.asserts = false;
+
+    return this.finishNode(node, Syntax.TSTypePredicate);
+}
+
+
+tsParseThisTypeOrThisTypePredicate()
+{
+    const thisKeyword = this.tsParseThisTypeNode();
+
+    if (this.isContextual("is") && !this.tsHasPrecedingLineBreak()) {
+        return this.tsParseThisTypePredicate(thisKeyword);
+    } else {
+        return thisKeyword;
+    }
+}
+
+
+tsParseTypePredicatePrefix()
+{
+    const id = this.parseIdent();
+
+    if (this.isContextual("is") && !this.tsHasPrecedingLineBreak()) {
+        this.next();
+        return id;
+    }
+}
+
+
+tsParseTypeOrTypePredicateAnnotation(returnToken)
+{
+    return this.tsInType(() => {
+        const t = this.startNode();
+        this.expect(returnToken);
+        const node = this.startNode();
+
+        const asserts = !!this.tsTryParse(this.tsParseTypePredicateAsserts.bind(this));
+
+        if (asserts && (this.type === tt._this)) {
+            let thisTypePredicate = this.tsParseThisTypeOrThisTypePredicate();
+
+            if (thisTypePredicate.type === Syntax.TSThisType) {
+                node.parameterName = thisTypePredicate;
+                node.asserts = true;
+                node.typeAnnotation = null;
+                thisTypePredicate = this.finishNode(node, Syntax.TSTypePredicate);
+            } else {
+                this.tsResetStartLocationFromNode(thisTypePredicate, node);
+                thisTypePredicate.asserts = true;
+            }
+
+            t.typeAnnotation = thisTypePredicate;
+
+            return this.finishNode(t, Syntax.TSTypeAnnotation);
+        }
+
+        const typePredicateVariable = tokenIsIdentifier(this.type) ?
+            this.tsTryParse(this.tsParseTypePredicatePrefix.bind(this)) :
+            null;
+
+        if (!typePredicateVariable) {
+            if (!asserts) {
+                // : type
+                return this.tsParseTypeAnnotation(/* eatColon */ false, t);
+            }
+
+            // : asserts foo
+            node.parameterName = this.parseIdent();
+            node.asserts = asserts;
+            node.typeAnnotation = null;
+            t.typeAnnotation = this.finishNode(node, Syntax.TSTypePredicate);
+            
+            return this.finishNode(t, Syntax.TSTypeAnnotation);
+        }
+
+        // : asserts foo is type
+        const type = this.tsParseTypeAnnotation(/* eatColon */ false);
+        node.parameterName = typePredicateVariable;
+        node.typeAnnotation = type;
+        node.asserts = asserts;
+        t.typeAnnotation = this.finishNode(node, Syntax.TSTypePredicate);
+        
+        return this.finishNode(t, Syntax.TSTypeAnnotation);
+    });
 }
 
 
@@ -531,8 +673,7 @@ tsParseNonArrayType()
         return this.tsParseLiteralTypeNode();
 
     case tt._this:
-        // No type predicate support, only handle 'this'
-        return this.tsParseThisTypeNode();
+        return this.tsParseThisTypeOrThisTypePredicate();
 
     case tt._typeof:
         return this.tsParseTypeQuery();
@@ -663,6 +804,19 @@ tsParseNonConditionalType()
 tsParseType()
 {
     return this.tsParseNonConditionalType();
+}
+
+
+tsInType(callback)
+{
+    const oldInType = this._tsInType;
+    this._tsInType = true;
+
+    try {
+        return callback();
+    } finally {
+        this._tsInType = oldInType;
+    }
 }
 
 
