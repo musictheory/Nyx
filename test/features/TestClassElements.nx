@@ -1,0 +1,161 @@
+// @suite: parseClassElements
+//
+// This test suite tries to cover all branches of Parser.parseClassElements()
+// `func` tests are handled in TestFunc.nx
+// `prop` tests are handled in TestProp.nx
+
+// @test: Main test
+// ============================================================================
+
+let didCallStaticBlock = false;
+
+class Foo {
+    static {
+        didCallStaticBlock = true;
+    }
+
+    static static()   { return "static static"; }
+    static async()    { return "static async"; }
+    static get()      { return "static get"; }
+    static set()      { return "static set"; }
+    static readonly() { return "static readonly"; }
+    static private()  { return "static private"; }
+    static func()     { return "static func"; }
+    static prop()     { return "static prop"; }
+
+    static()   { return "static";   }
+    async()    { return "async";    }
+    get()      { return "get";      }
+    set()      { return "set";      }
+    readonly() { return "readonly"; }
+    private()  { return "private";  }
+    func()     { return "func";     }
+    prop()     { return "prop";     }
+
+    static *staticGen()   { yield "staticGen";   }
+           *instanceGen() { yield "instanceGen"; }
+
+    async  *asyncGen()  { yield Promise.resolve("asyncGen"); }
+
+    #foo = 42;
+    get foo()  { return this.#foo; }
+    set foo(x) { this.#foo = x;    }
+
+    classMethod() { return 42; }
+
+    classField = 42;
+}
+
+let foo = new Foo();
+
+assert(didCallStaticBlock);
+
+assert.equal(Foo.static(),   "static static");
+assert.equal(Foo.async(),    "static async");
+assert.equal(Foo.get(),      "static get");
+assert.equal(Foo.set(),      "static set");
+assert.equal(Foo.readonly(), "static readonly");
+assert.equal(Foo.private(),  "static private");
+assert.equal(Foo.func(),     "static func");
+assert.equal(Foo.prop(),     "static prop");
+
+assert.equal(foo.static(),   "static");
+assert.equal(foo.async(),    "async");
+assert.equal(foo.get(),      "get");
+assert.equal(foo.set(),      "set");
+assert.equal(foo.readonly(), "readonly");
+assert.equal(foo.private(),  "private");
+assert.equal(foo.func(),     "func");
+assert.equal(foo.prop(),     "prop");
+
+for (let x of Foo.staticGen()) {
+    assert.equal(x, "staticGen");
+}
+
+for (let x of foo.instanceGen()) {
+    assert.equal(x, "instanceGen");
+}
+
+// This is the best we can do - we can't use await as
+// we are running as a vm.Script
+//
+assert.equal(typeof foo.asyncGen().next, "function");
+
+
+assert.equal(foo.foo, 42);
+foo.foo = 157;
+assert.equal(foo.foo, 157);
+
+assert.equal(foo.classMethod(), 42);
+assert.equal(foo.classField, 42);
+
+
+
+// @test: readonly on class fields
+// @typecheck
+// ============================================================================
+
+class Foo {
+    readonly instanceFoo = 42;
+    static readonly staticFoo = 157;
+}
+
+let foo = new Foo();
+assert.equal(foo.instanceFoo, 42);
+assert.equal(Foo.staticFoo, 157);
+
+foo.instanceFoo = 157; // @type
+
+
+
+// @test: Error on 'get constructor()'
+// ============================================================================
+
+class Foo {
+    get constructor() { } // @error
+}
+
+
+
+// @test: Error on 'private foo()'
+// ============================================================================
+
+class Foo {
+    private foo() { } // @error
+}
+
+
+
+// @test: Error on 'readonly foo()'
+// ============================================================================
+
+class Foo {
+    readonly foo() { } // @error
+}
+
+
+
+// @test: Error on 'private foo'
+// ============================================================================
+
+class Foo {
+    private foo; // @error
+}
+
+
+
+// @test: SyntaxError on 'async foo'
+// ============================================================================
+
+class Foo {
+    async foo; // @error
+}
+
+
+
+// @test: SyntaxError on 'async prop foo'
+// ============================================================================
+
+class Foo {
+    async prop foo; // @error
+}

@@ -675,8 +675,8 @@ generate()
 
         let rootVariable = SymbolUtils.RootVariable;
 
-        let isPrivate   = (node.modifier == "private");
-        let isReadOnly  = (node.modifier == "readonly");
+        let isPrivate   = node.private;
+        let isReadOnly  = node.readonly;
         let wantsGetter =  !isPrivate;
         let wantsSetter = (!isPrivate && !isReadOnly);
 
@@ -779,7 +779,7 @@ generate()
         }
     }
 
-    function handleNXFuncDefinition(node)
+    function handleNXFuncDefinition(node, parent)
     {
         let isStatic = node.static;
         let baseName = node.key.name;
@@ -813,7 +813,11 @@ generate()
             }
         }
 
-        modifier.replace(node.start, node.key.start, isStatic ? "static " : "");
+        modifier.replace(node.start, node.key.start, (
+            (isStatic       ? "static "   : "") +
+            (node.async     ? "async "    : "") +
+            (node.generator ? "*" : "")        
+        ));
         
         let funcName = node.nx_func;
         let keyReplacement = funcName ?? baseName;
@@ -904,7 +908,7 @@ generate()
             handleNXPropDefinition(node);
 
         } else if (type === Syntax.NXFuncDefinition) {
-            return handleNXFuncDefinition(node);
+            return handleNXFuncDefinition(node, parent);
 
         } else if (type === Syntax.NXFuncParameter) {
             handleNXFuncParameter(node);

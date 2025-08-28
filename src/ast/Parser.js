@@ -19,6 +19,18 @@ import { TypeParser } from "./TypeParser.js";
 tt.atId = new TokenType("atId", { startsExpr: true });
 
 
+// From acorn, used by parseClassElement()
+function checkKeyName(node, name)
+{
+    const key = node.key;
+
+    return !node.computed && (
+        key.type === Syntax.Identifier && key.name  === name ||
+        key.type === Syntax.Literal    && key.value === name
+    )
+}
+
+
 export class Parser extends TypeParser {
 
 static parse(contents, options)
@@ -319,20 +331,6 @@ parseExprOp(left, leftStartPos, leftStartLoc, minPrec, forInit)
 }
 
 
-nxReplaceStartLocation(targetNode, sourceNode)
-{
-    targetNode.start = sourceNode.start;
-    
-    if (this.options.locations) {
-        targetNode.loc.start = sourceNode.loc.start;
-    }
-    
-    if (this.options.ranges) {
-        targetNode.range[0] = sourceNode.range[0];
-    }
-}
-
-
 nxReadToken_at() // '@'
 {
     ++this.pos;
@@ -534,74 +532,161 @@ nxMaybeParseInterfaceDeclaration()
 
 parseClassElement(constructorAllowsSuper)
 {
+    if (this.eat(tt.semi)) return null;
+
     const node = this.startNode();
 
-    let state;
- 
-    const eat = (name) => {
-        if (this.value === name && this.type == tt.name) {
-            if (!state) state = this.saveState();
-            this.next();
-            return true;
-        }
+    let keyName = "";
+    let kind = "method";
 
-        return false;
-    };
+    let isStatic    = false;
+    let isAsync     = false;
+    let isFunc      = false;
+    let isGenerator = false;
 
-    let isStatic   = eat("static");
-    let isAsync    = eat("async");
-    let isReadonly = eat("readonly");
-    let isPrivate  = !isReadonly && eat("private");
+    let readonlyStart = null;
+    let privateStart  = null;
 
-    let canBeProp = !isAsync;
-    let canBeFunc = !isPrivate;
-
-    let atIdentifier = (this.type == tt.atId) ? this.nxParseAtIdentifier() : null;
-    
-    if (canBeProp && eat("prop")) {
-        if (this.type == tt.name || this.type.keyword) {
-            let modifier = null;
-
-            if      (isPrivate)  modifier = "private";
-            else if (isReadonly) modifier = "readonly";
-
-            return this.nxParseProp(node, isStatic, modifier, atIdentifier);
-        }
-
-    } else if (canBeFunc && eat("func")) {
-        if (this.type == tt.name || this.type.keyword) {
-            return this.nxParseFunc(node, isStatic, isAsync, atIdentifier);
-        }
-
-    } else if (isReadonly && !isAsync && !atIdentifier) {
-        let savedPosition = this.pos;
-        let result = super.parseClassElement(constructorAllowsSuper);
-        
-        if (result.type == Syntax.PropertyDefinition) {
-            result.static = isStatic;
-            result.readonly = isReadonly;
-
-            this.nxReplaceStartLocation(result, node);
-
-            return result;
-
-        } else {
-            this.raise(savedPosition, "'readonly' modifier can only be used on a property declaration.");
+    const disallowReadonly = () => {
+        if (readonlyStart !== null) {
+            this.raise(readonlyStart, "'readonly' modifier can only appear on a property declaration or prop.");    
         }
     }
 
-    if (state) this.restoreState(state);
-    return super.parseClassElement(constructorAllowsSuper);
+    const disallowPrivate = () => {
+        if (privateStart !== null) {
+            this.raise(privateStart, "'private' modifier can only appear on a prop.");    
+        }
+    }
+
+    let atIdentifier = (this.type == tt.atId) ? this.nxParseAtIdentifier() : null;
+
+    if (this.eatContextual("static")) {
+        if (this.eat(tt.braceL)) {
+            this.parseClassStaticBlock(node);
+            return node;
+        }
+
+        if (this.isClassElementNameStart() || this.type === tt.star) {
+            isStatic = true;
+        } else {
+            keyName = "static";
+        }
+    }
+    node.static = isStatic;
+
+    if (!keyName && this.eatContextual("async")) {
+        if ((this.isClassElementNameStart() || this.type === tt.star) && !this.canInsertSemicolon()) {
+            isAsync = true;
+        } else {
+            keyName = "async";
+        }
+    }
+
+    if (!keyName && this.eatContextual("func")) {
+        if (this.isClassElementNameStart() || this.type === tt.star) {
+            isFunc = true;
+        } else {
+            keyName = "func";
+        }
+    }
+
+    if (!keyName && this.eat(tt.star)) {
+        isGenerator = true;
+    }
+
+    if (!keyName && !isAsync && !isFunc && !isGenerator) {
+        if (this.eatContextual("readonly")) {
+            if (this.isClassElementNameStart()) {
+                readonlyStart = this.start;
+            } else {
+                keyName = "readonly";
+            }
+
+        } else if (this.eatContextual("private")) {
+            if (this.isClassElementNameStart()) {
+                privateStart = this.start;
+            } else {
+                keyName = "private";
+            }        
+        }
+    }
+
+    if (!keyName && !isAsync && !isFunc && !isGenerator) {
+        let lastValue = this.value;
+        
+        if (
+            this.eatContextual("get")  ||
+            this.eatContextual("set")  ||
+            this.eatContextual("prop")
+        ) {
+            if (this.isClassElementNameStart()) {
+                kind = lastValue;
+            } else {
+                keyName = lastValue;
+            }
+        }
+    }
+
+    // Parse element name
+    if (keyName) {
+        // 'async', 'get', 'set', or 'static' were not a keyword contextually.
+        // The last token is any of those. Make it the element name.
+        node.computed = false;
+        node.key = this.startNodeAt(this.lastTokStart, this.lastTokStartLoc);
+        node.key.name = keyName;
+        this.finishNode(node.key, Syntax.Identifier);
+    } else {
+        this.parseClassElementName(node);
+    }
+
+
+    if (isFunc) {
+        disallowReadonly();
+        disallowPrivate();
+
+        node.targetTag = atIdentifier;
+
+        this.nxParseFunc(node, isAsync, isGenerator);
+
+    } else if (kind === "prop") {
+        node.readonly = (readonlyStart !== null);
+        node.private  = (privateStart  !== null);
+
+        node.observer = atIdentifier;
+
+        this.nxParseProp(node);
+
+    // Parse element value
+    } else if (this.type === tt.parenL || kind !== "method" || isGenerator || isAsync) {
+        const isConstructor = !node.static && checkKeyName(node, "constructor");
+        const allowsDirectSuper = isConstructor && constructorAllowsSuper;
+
+        // Couldn't move this check into the 'parseClassMethod' method for backward compatibility.
+        if (isConstructor && kind !== "method") {
+            this.raise(node.key.start, "Constructor can't have get/set modifier");
+        }
+
+        disallowReadonly();
+        disallowPrivate();
+        
+        node.kind = isConstructor ? "constructor" : kind;
+        this.parseClassMethod(node, isGenerator, isAsync, allowsDirectSuper);
+    
+    } else {
+        disallowPrivate();
+
+        node.readonly = (readonlyStart !== null);
+
+        this.parseClassField(node);
+    }
+
+    return node;
 }
 
 
-nxParseProp(node, isStatic, modifier, observer)
+nxParseProp(node)
 {
-    node.static = isStatic;
-    node.modifier = modifier;
-    node.observer = observer;
-    
-    node.key = this.parseIdent(true);
     node.typeAnnotation = (this.type == tt.colon) ? this.tsParseTypeAnnotation() : null;
 
     if (this.eat(tt.eq)) {
@@ -641,11 +726,7 @@ nxParseFuncParameter()
     node.name = name;
 
     if (this.type == tt.question) {
-        node.optional = true;
-        node.question = this.nxParsePunctuation();
-    } else {
-        node.optional = false;
-        node.question = null;
+        this.raise(this.start, "Use of optional parameter with 'func'");
     }
         
     if (this.type == tt.colon) {
@@ -658,14 +739,12 @@ nxParseFuncParameter()
 }
 
 
-nxParseFunc(node, isStatic, isAsync, targetTag)
+nxParseFunc(node, isAsync, isGenerator)
 {
-    node.static = isStatic;
     node.async = isAsync;
+    node.generator = isGenerator;
 
-    node.key = this.parseIdent(true);
     node.params = [ ];
-    node.targetTag = targetTag;
     
     if (this.nxInInterface) {
         node.optional = this.eat(tt.question);
@@ -687,6 +766,7 @@ nxParseFunc(node, isStatic, isAsync, targetTag)
     if (this.type == tt.braceL) {
         let flags = 66; // 2(SCOPE_FUNCTION) + 64(SCOPE_SUPER)
         if (isAsync) flags += 4; // SCOPE_ASYNC
+        if (isGenerator) flags += 8; // SCOPE_GENERATOR
 
         this.enterScope(flags);
 

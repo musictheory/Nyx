@@ -14,6 +14,8 @@ class Foo {
 
     func f(_ a: number, _ b: number, c: number): string { return "f(_:_:c:)"; }
 
+    func f(c): string { return "f(c:)"; } // @type
+
     func noArg(): string { return "noArg()"; }
 }
 
@@ -25,7 +27,24 @@ assert.equal(foo.f(a: 42, b: 42), "f(a:b:)");
 assert.equal(foo.f(   42, b: 42), "f(_:b:)");
 assert.equal(foo.f(42, 42, c: 42), "f(_:_:c:)");
 
+assert.equal(foo.f(c: {}), "f(c:)");
+
 assert.equal(foo.noArg(), "noArg()");
+
+
+
+// @test: Async func
+// @typecheck
+// ============================================================================
+
+class Foo {
+    async func asyncF(a: number) { }
+    static async func asyncF(a: number) { }
+}
+
+let foo = new Foo();
+assert.equal(typeof Foo.asyncF(a: 1).then, "function");
+assert.equal(typeof foo.asyncF(a: 1).then, "function");
 
 
 
@@ -52,7 +71,6 @@ class Foo {
 
     func let(_ a: number): string { return "let(_:)"; }
     func let(a: number):   string { return "let(a:)"; }
-
 }
 
 let foo = new Foo();
@@ -71,6 +89,30 @@ class Foo {
 }
 
 assert.equal((new Foo()).func(42), "Foo");
+
+
+
+// @test: 'func' generator
+// ============================================================================
+
+class Foo {
+    func *gen(times: number) {
+        for (let i = 0; i < times; i++) {
+            yield "Foo";
+        }
+    }
+
+    async func *asyncGen(times: number) { }
+}
+
+let f = new Foo();
+
+assert.deepStrictEqual(
+    Array.from(f.gen(times: 3)),
+    ["Foo", "Foo", "Foo" ]
+);
+
+assert.equal(typeof f.asyncGen(times: 1).next().then, "function");
 
 
 
@@ -97,4 +139,32 @@ function foo(a, b, c, d, e) {
 }
 
 foo("A", ...[ "B", "C", "D" ]);
+
+
+
+// @test: Optional func in interface
+// ============================================================================
+
+interface IFoo {
+    func foo (bar: string);
+    func foo?(baz: string);
+}
+
+class Foo {
+    func foo (bar: string) { }
+}
+
+function takesIFoo(foo: IFoo) { }
+
+let foo = new Foo();
+takesIFoo(foo);
+
+
+
+// @test: Error on optional parameter
+// ============================================================================
+
+class Foo {
+    func foo(bar?: string) { } // @error
+}
 

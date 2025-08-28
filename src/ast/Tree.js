@@ -66,6 +66,7 @@ const ESTreeStructure = {
     ReturnStatement:          [ "argument" ],
     SequenceExpression:       [ "expressions" ],
     SpreadElement:            [ "argument" ],
+    StaticBlock:              [ "body" ],
     Super:                    [ ],
     SwitchStatement:          [ "discriminant", "cases" ],
     SwitchCase:               [ "test", "consequent" ],
