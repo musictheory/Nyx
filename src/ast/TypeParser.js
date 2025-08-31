@@ -41,6 +41,7 @@ import { Syntax } from "./Tree.js";
 
 
 const skipWhiteSpace = /(?:\s|\/\/.*|\/\*[^]*?\*\/)*/g;
+const Maybe = Symbol();
 
 
 function tokenIsIdentifier(token)
@@ -365,15 +366,32 @@ tsIsUnambiguouslyStartOfFunctionType()
     }
 
     if (this.tsSkipParameterStart()) {
+        // We are either parsing a function type or an NXNullableType
+        if (this.type === tt.question) {
+            // ( xxx ?
+            
+            if (this.type === tt.parenR) {
+                // ( xxx ? )
+                this.next();
+                if (this.type !== tt.arrow) {
+                    return false;
+                }
+
+            } else if (this.type === tt.colon) {
+                // ( xxx ? :
+                return true;
+            }
+            
+            return Maybe;
+        }
+
         if (
             this.type === tt.colon ||
             this.type === tt.comma ||
-            this.type === tt.question ||
             this.type === tt.eq
         ) {
             // ( xxx :
             // ( xxx ,
-            // ( xxx ?
             // ( xxx =
             return true;
         }
@@ -837,7 +855,7 @@ tsParseParenthesizedType()
 {
     const node = this.startNode();
     this.expect(tt.parenL);
-    node.typeAnnotation = this.tsParseType();
+    node.typeAnnotation = this.tsSetAllowsNullableTypesAnd(true, () => this.tsParseType());
     this.expect(tt.parenR);
     return this.finishNode(node, Syntax.NXParenthesizedType);
 }
@@ -995,10 +1013,21 @@ tsParseUnionTypeOrHigher()
 
 tsParseNonConditionalType()
 {
-    if (this.tsIsStartOfFunctionType()) {
-        return this.tsParseFunctionOrConstructorType(Syntax.TSFunctionType);
-    } 
+    let isStartOfFunctionType = this.tsIsStartOfFunctionType();
     
+    if (isStartOfFunctionType === true) {
+        return this.tsParseFunctionOrConstructorType(Syntax.TSFunctionType);
+    
+    } else if (isStartOfFunctionType === Maybe) {
+        let state = this.saveState();
+        
+        try {
+            return this.tsParseFunctionOrConstructorType(Syntax.TSFunctionType);
+        } catch (e) {
+            this.restoreState(state);
+        }
+    }
+
     if (this.type === tt._new) {
         return this.tsParseFunctionOrConstructorType(Syntax.TSConstructorType);
     }

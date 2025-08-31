@@ -18,6 +18,8 @@ import { Parser } from "../src/ast/Parser.js";
 
 import { parse as acornParse } from "acorn";
 
+Error.stackTraceLimit = 20;
+
 
 const Usage = `Usage: nyxdev.js [OPTIONS] INPUT_FILES
 

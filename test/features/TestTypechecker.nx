@@ -176,9 +176,10 @@ let bar: string? = undefined; // @type
 let baz: string? = 5; // @type
 let moo: string? = "moo";
 
-let t1: [ string?, string? ] = [ null, undefined ];
-let t2: [ string?, string? ] = [ null ];
-let t3: [ string ]           = [ null ]; //@type
+let t1: [ (string?), string? ] = [ null, undefined ];
+let t2: [ (string?), string? ] = [ null ];
+let t3: [ string? ]            = [ null ]; //@type
+let t4: [ string  ]            = [ null ]; //@type
 
 
 
