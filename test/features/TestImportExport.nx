@@ -104,3 +104,10 @@ export let foo = { }; // @error
 
 let foo = { };
 export foo; // @error
+
+
+// @test: Disallow empty export
+// ============================================================================
+
+export { } // @error
+

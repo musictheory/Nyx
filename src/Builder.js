@@ -160,7 +160,7 @@ build()
             notSupported();  
         }
         
-        if (node.declaration.type == Syntax.VariableDeclaration) {
+        if (node.declaration?.type == Syntax.VariableDeclaration) {
             if (node.declaration.kind != "const") {
                 notSupported();
             }
@@ -169,7 +169,7 @@ build()
                 addValue(declarator);
             }
 
-        } else if (node.declaration.type == Syntax.FunctionDeclaration) {
+        } else if (node.declaration?.type == Syntax.FunctionDeclaration) {
             addValue(node.declaration);
 
         } else if (node.declaration?.id?.name) {
@@ -360,7 +360,7 @@ build()
 
     function handleNXInterfaceDeclaration(node, parent)
     {
-        let modelType = new Model.Type(makeLocation(node), node.id.name, null);
+        let modelType = new Model.Type(makeLocation(node), node.id.name);
 
         scopeManager.declare(modelType);
         
@@ -371,13 +371,7 @@ build()
 
     function handleNXTypeDeclaration(node, parent)
     {
-        let reference = null;
-
-        if (node.typeAnnotation.typeAnnotation.type == Syntax.TSTypeReference) {
-            reference = node.typeAnnotation.typeAnnotation.name.name;        
-        }
-        
-        let modelType = new Model.Type(makeLocation(node), node.id.name, reference);
+        let modelType = new Model.Type(makeLocation(node), node.id.name);
         
         scopeManager.declare(modelType);
 

@@ -312,23 +312,13 @@ async _generateJavaScript(files, model, squeezer, options)
 
 async _finish(files, options)
 {
-    function getLines(arrayOrString) {
-        if (Array.isArray(arrayOrString)) {
-            return arrayOrString.flat(Infinity).join("\n").split("\n");
-        } else if (typeof arrayOrString == "string") {
-            return arrayOrString.split("\n");
-        } else {
-            return [ ];
-        }
-    }
-    
     async function getLinesFromProjectFile(inPath) {
         let path = Utils.getProjectPath(inPath);
         return (await fs.readFile(path)).toString().split("\n");
     }
 
-    let prependLines = getLines( options["prepend"] );
-    let appendLines  = getLines( options["append"] );
+    let prependLines = options["prepend"];
+    let appendLines  = options["append"];
 
     // Add runtime if needed
     if (!options["dev-omit-runtime"]) {
@@ -427,6 +417,7 @@ async compile(inOptions)
     //!legacy: 'include-bridged' option goes away
     let optionsIncludeBridged = options["include-bridged"];
 
+    /* node:coverage ignore next 3 */
     if (options["dev-print-log"]) {
         Utils.enableLog();
     }
@@ -509,6 +500,7 @@ async compile(inOptions)
 
         // Perform model diff
         if (!previousModel || previousModel.hasGlobalChanges(model)) {
+            /* node:coverage ignore next 5 */
             if (!previousModel) {
                 Log("No previous model, all files need generate");
             } else {

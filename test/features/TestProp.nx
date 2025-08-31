@@ -202,3 +202,13 @@ assert.equal(button.needsLayout, false); // needsLayout still false
 
 button.title = "Different Title"; // Button title changed
 assert.equal(button.needsLayout, true); // needsLayout is now true
+
+
+// @test: Unknown Observer Error
+// @options: { "observers": {  } }
+// ============================================================================
+
+class Foo {
+    @moo prop foo: string = "#ff0000"; // @error
+}
+

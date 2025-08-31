@@ -82,11 +82,10 @@ class Runtime {
 
 class Type {
 
-    constructor(location, name, reference)
+    constructor(location, name)
     {
         this.location  = location;
         this.name      = name;
-        this.reference = reference;
     }
 
 }
