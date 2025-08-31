@@ -170,7 +170,7 @@ export const TreeStructure = Object.assign({ },
         array.splice(array.indexOf(existing), 0, value);
     }
 
-    addAfter( TreeStructure.NewExpression,  "callee", "typeParameters" );
+    addAfter( TreeStructure.NewExpression, "callee", "typeParameters" );
 
     addAfter( TreeStructure.ClassDeclaration, "id", "typeParameters" );
     addAfter( TreeStructure.ClassDeclaration, "superClass", "superTypeParameters" );
@@ -179,8 +179,6 @@ export const TreeStructure = Object.assign({ },
     addAfter( TreeStructure.ClassExpression, "id", "typeParameters" );
     addAfter( TreeStructure.ClassExpression, "superClass", "superTypeParameters" );
     addAfter( TreeStructure.ClassExpression, "superTypeParameters", "implements" );
-
-    addAfter( TreeStructure.MethodDefinition, "key", "typeParameters" );
 
     addAfter( TreeStructure.FunctionDeclaration, "id", "typeParameters" );
     addAfter( TreeStructure.FunctionDeclaration, "params", "returnType" );

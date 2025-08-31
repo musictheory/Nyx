@@ -169,9 +169,15 @@ parseClassMethod(method, isGenerator, isAsync, allowsDirectSuper)
         method.optional = this.eat(tt.question);
     }
 
-    method.typeParameters = this.tsTryParseTypeParameters("const");
+    let typeParameters = this.tsTryParseTypeParameters("const");
 
-    super.parseClassMethod(method, isGenerator, isAsync, allowsDirectSuper);
+    let result = super.parseClassMethod(method, isGenerator, isAsync, allowsDirectSuper);
+
+    if (typeParameters) {
+        result.value.typeParameters = typeParameters;
+    }
+
+    return result;
 }
 
 
