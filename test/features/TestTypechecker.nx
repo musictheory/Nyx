@@ -182,6 +182,156 @@ let t3: [ string ]           = [ null ]; //@type
 
 
 
+// @test: Conditional Types
+// @typecheck
+// ============================================================================
+
+class Animal { live() { } }
+class Cow extends Animal { moo() { } }
+
+function f(x: Cow extends Animal ? string : number): void { }
+
+f("moo"); // ok
+f(42); // @type
+
+
+
+// @test: Infer Type
+// @typecheck
+// ============================================================================
+
+type GetReturnType<T> = T extends (...args: never[]) => infer R ? R : never;
+
+function f(x: GetReturnType<() => string>): void { }
+
+f("moo"); // ok
+f(42); // @type
+
+
+
+// @test: Type Parameters
+// @typecheck
+// ============================================================================
+
+function takesString(x: string) { }
+function takesIdentity(x: <T>(x: T) => T) { }
+
+
+// Test basic type parameters
+{
+    function identity<T>(x: T): T { return x; }
+
+    const identity2 = function <T>(x: T): T { return x; }
+
+    class Identity {
+        static identity<T>(x: T): T { return x; }
+        identity<T>(x: T): T { return x; }
+    }
+
+    let i = new Identity();
+    takesString(i.identity("foo"));
+    takesString(Identity.identity("foo"));
+    takesString(identity("foo"));
+    takesString(identity2("foo"));
+
+    takesIdentity(i.identity);
+    takesIdentity(Identity.identity);
+    takesIdentity(identity);
+    takesIdentity(identity2);
+}
+
+
+// Class with multiple parameters, 'extends Class<T>'
+{
+    class Foo<T, U> { check(a: T, b: U) { } }
+    class Bar extends Foo<bigint, bigint> { }
+
+    let f1 = new Foo<string, number>();
+    let f2 = new Foo<number, string>();
+
+    f1.check("foo", 42);
+    f1.check("foo",
+        "foo"); // @type
+
+    f2.check(42, "foo");
+    f2.check("foo", 42); // @type
+
+
+    let bar = new Bar();
+    bar.check(42n, 42n);
+    bar.check(42n,
+        "foo"); // @type
+}
+
+
+// const modifier
+{
+    function constIdentity<const T>(x: T) { return x; }
+
+    class ConstIdentity {
+        constIdentity<const T>(x: T): T { return x; }
+    }
+
+    let i = new ConstIdentity();
+
+    let x1 = constIdentity({ x: 42 });
+    x1.x = 157; // @type
+
+    let x2 = i.constIdentity({ x: 42 });
+    x2.x = 157; // @type
+}
+
+
+// in/out modifier
+{
+    interface Consumer<in T> { }
+    interface Producer<out T> { }
+    interface ProducerConsumer<in out T> { }
+}
+
+
+// Test 'extends', 'infer', and conditional types
+{
+    function string_number(a: string, b: number) { }
+    function number_string(a: number, b: string) { }
+
+    type FirstArg<T> = T extends (first: infer U, ...args: any[]) => any ? U : never;
+
+    function returns_string(): FirstArg<typeof string_number> { return "x"; }
+    function returns_number(): FirstArg<typeof number_string> { return 42; }
+
+    takesString(returns_string());
+    takesString(returns_number()); // @type
+
+    type FirstIfString<T> = T extends [infer S extends string, ...unknown[]] ? S : symbol;
+
+    function returns_string2(): FirstIfString<[string, number]> { return "x"; }
+    function returns_symbol():  FirstIfString<[number, string]> { return Symbol(); }
+
+    takesString(returns_string2());
+    takesString(returns_symbol()); // @type
+}
+
+
+// Test type parameter with constraint
+{
+    class Foo { foo() { } }
+
+    function takesFoo(foo: Foo) { }
+
+    type TypeMap = { "foo": Foo }
+
+    function create<T extends keyof TypeMap>(name: T): TypeMap[T]
+    {
+        if (name == "foo") return new Foo();
+        else throw new Error();
+    }
+
+    takesFoo(create("foo"));
+}
+
+
+
 // @test: Edge cases
 // @typecheck
 // ============================================================================
@@ -189,4 +339,11 @@ let t3: [ string ]           = [ null ]; //@type
 
 // Check special case where type annotation is before <
 assert.equal({ } as any as number < 42, false);
+
+
+
+// @test: Error - Empty Type Parameters
+// ============================================================================
+
+class Foo<> { } // @error
 

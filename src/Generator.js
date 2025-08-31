@@ -99,7 +99,9 @@ generate()
             type == Syntax.TSTypeAnnotation       ||
             type == Syntax.NXEnumDeclaration      ||
             type == Syntax.NXInterfaceDeclaration ||
-            type == Syntax.NXTypeDeclaration
+            type == Syntax.NXTypeDeclaration      ||
+            type == Syntax.TSTypeParameterDeclaration ||
+            type == Syntax.TSTypeParameterInstantiation
         )) {
             return true;
         }
@@ -247,6 +249,14 @@ generate()
         }
 
         if (!forTypechecker) {
+            if (node.implements?.length) {
+                if (node.id) {
+                    modifier.replace(node.id.end, node.body.start, " ");
+                } else {
+                    modifier.replace(node.start, node.body.start, "class ");
+                }
+            }
+
             let rootVariable = SymbolUtils.RootVariable;
 
             let constructorText;
@@ -305,7 +315,7 @@ generate()
     {
         if (!forTypechecker) {
             if (node.readonly) {
-                let replacement = node.static ? "static" : "";
+                let replacement = node.static ? "static " : "";
                 modifier.replace(node.start, node.key.start, replacement);                
             }            
         }
@@ -633,17 +643,11 @@ generate()
             toSkip.add(node.value);
         }
     }
-
-    function handleNXNullableType(node, parent)
-    {
-        let rightString = " | null)";
-
-        if (parent.type === Syntax.TSTupleType) {
-            rightString += "?";
-        }
     
+    function handleNXNullableType(node)
+    {
         modifier.insert(node.start, "(");
-        modifier.replace(node.typeAnnotation.end, node.end, rightString);
+        modifier.replace(node.typeAnnotation.end, node.end, " | null)");
     }
 
     function handleNXGlobalDeclaration(node)
@@ -879,9 +883,9 @@ generate()
 
         } else if (type === Syntax.TSTypeAnnotation) {
             handleTSTypeAnnotation(node, parent);
-
+            
         } else if (type === Syntax.NXNullableType) {
-            handleNXNullableType(node, parent);
+            handleNXNullableType(node);
 
         } else if (type === Syntax.NXGlobalDeclaration) {
             handleNXGlobalDeclaration(node);

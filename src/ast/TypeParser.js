@@ -5,7 +5,30 @@
     https://github.com/sveltejs/acorn-typescript
     MIT License
 
-    Subclass of Acorn's Parser to parse type annotations
+    As much as possible, this file should replicate the ordering
+    of methods in acorn-typescript.
+    
+    The intent of this class is to parse type annotations,
+    type predicates, type parameters, and heritage clauses.
+    
+    Parsing higher-level declarations like `interface`, `enum`,
+    and `type` should be the responsibility of the subclass.
+
+    Subclasses must implement:
+    - saveState()
+    - restoreState()
+    
+    Subclasses may call:
+    - tsParseTypeAnnotation() to parse a type annotation
+    - tsParseReturnType() to parse 'returnType'
+    - tsTryParseTypeParameters() to parse 'typeParameters'
+    - tsParseHeritageClause() to parse 'extends' or 'implements'
+
+    Subclasses may also call utility methods such as:
+    - tsTryParse();
+    - tsHasPrecedingLineBreak()
+    - tsMatchLeftRelational()
+    - tsMatchRightRelational()
 */
 
 import {
@@ -23,15 +46,6 @@ const skipWhiteSpace = /(?:\s|\/\/.*|\/\*[^]*?\*\/)*/g;
 function tokenIsIdentifier(token)
 {
     return token == tt.name; //!FIXME
-}
-
-
-function nonNull(x)
-{
-    if (x == null) {
-        throw new Error(`Unexpected ${x} value.`);
-    }
-    return x;
 }
 
 
@@ -66,9 +80,14 @@ function keywordTypeFromName(value)
 
 export class TypeParser extends AcornParser {
 
+#inType = false;
+#allowsConditionalTypes = true;
+#allowsNullableTypes = true;
+
+
 readToken_lt_gt(code)
 {
-    if (this._tsInType) {
+    if (this.#inType) {
         return this.finishOp(tt.relational, 1);
     }
     
@@ -85,6 +104,49 @@ saveState()
 restoreState(state)
 {
     throw new Error("TypeParser is abstract and needs a restoreState() implementation.");
+}
+
+
+tsSetAllowsNullableTypesAnd(yn, callback)
+{
+    let oldAllowsNullableTypes = this.#allowsNullableTypes;
+    this.#allowsNullableTypes = yn;
+    
+    try {
+        return callback();
+    } finally {
+        this.#allowsNullableTypes = oldAllowsNullableTypes;
+    }
+}
+
+
+
+// Replaces:
+// tsInAllowConditionalTypesContext()
+// tsInDisallowConditionalTypesContext()
+tsSetAllowsConditionalTypesAnd(yn, callback)
+{
+    let oldAllowsConditionalTypes = this.#allowsConditionalTypes;
+    this.#allowsConditionalTypes = yn;
+    
+    try {
+        return callback();
+    } finally {
+        this.#allowsConditionalTypes = oldAllowsConditionalTypes;
+    }
+}
+
+// Replaces tsInType()
+tsSetInTypeAnd(yn, callback)
+{
+    const oldInType = this.#inType;
+    this.#inType = true;
+
+    try {
+        return callback();
+    } finally {
+        this.#inType = oldInType;
+    }
 }
 
 
@@ -154,9 +216,9 @@ tsParseEntityName()
 tsIsListTerminator(kind)
 {
     switch (kind) {
-    case "EnumMembers":
-    case "TypeMembers":
-        return this.type === tt.braceR;
+    // case "EnumMembers":
+    // case "TypeMembers":
+    //     return this.type === tt.braceR;
     case "HeritageClauseElement":
         return this.type === tt.braceL;
     case "TupleElementTypes":
@@ -167,7 +229,9 @@ tsIsListTerminator(kind)
 }
 
 
-tsParseDelimitedListWorker(kind, parseElement, expectSuccess)
+// Simplified version as acorn-typescript had
+// code paths which were always/never executed
+tsParseDelimitedList(kind, parseElement)
 {
     const result = []
     let trailingCommaPos = -1;
@@ -179,9 +243,15 @@ tsParseDelimitedListWorker(kind, parseElement, expectSuccess)
         trailingCommaPos = -1;
 
         const element = parseElement();
+
+        // This check appears to be unnecessary, as our functions passed
+        // into parseElement never return null/undefined
+        /* node:coverage disable */
         if (element == null) {
-            return undefined;
+            throw new Error(`Unexpected ${element} value.`);
         }
+        /* node:coverage enable */
+
         result.push(element);
 
         if (this.eat(tt.comma)) {
@@ -193,24 +263,42 @@ tsParseDelimitedListWorker(kind, parseElement, expectSuccess)
             break;
         }
 
-        if (expectSuccess) {
-            // This will fail with an error about a missing comma
-            this.expect(tt.comma);
-        }
-
-        return undefined;
+        // This will fail with an error about a missing comma
+        this.expect(tt.comma);
     }
 
     return result;
 }
 
-      
-tsParseDelimitedList(kind, parseElement)
+
+tsParseTypeParameterName()
 {
-    return nonNull(this.tsParseDelimitedListWorker(kind, parseElement, /* expectSuccess */ true));
+    const typeName = this.parseIdent();
+    return typeName.name;
 }
 
-      
+
+tsEatThenParseType(token)
+{
+    return this.type === token ? this.tsNextThenParseType() : undefined;
+}
+            
+
+tsNextThenParseType()
+{
+    return this.tsDoThenParseType(() => this.next());
+}
+
+
+tsDoThenParseType(callback)
+{
+    return this.tsSetInTypeAnd(true, () => {
+        callback();
+        return this.tsParseType();
+    });
+}
+
+
 tsLookAhead(f)
 {
     const state = this.saveState();
@@ -261,7 +349,7 @@ tsSkipParameterStart()
             return false
         }
     }
-
+    
     return false;
 }
 
@@ -310,8 +398,8 @@ tsIsStartOfFunctionType()
     }
 
     return (
-          this.type === tt.parenL &&
-          this.tsLookAhead(this.tsIsUnambiguouslyStartOfFunctionType.bind(this))
+        this.type === tt.parenL &&
+        this.tsLookAhead(this.tsIsUnambiguouslyStartOfFunctionType.bind(this))
     );
 }
 
@@ -364,7 +452,7 @@ tsParseThisTypeNode()
 
 tsParseTypeAnnotation(eatColon = true, t = this.startNode())
 {
-    this.tsInType(() => {
+    this.tsSetInTypeAnd(true, () => {
         if (eatColon) this.expect(tt.colon);
         t.colon = eatColon;
         t.typeAnnotation = this.tsParseType();
@@ -412,7 +500,7 @@ tsParseTypePredicatePrefix()
 
 tsParseTypeOrTypePredicateAnnotation(returnToken)
 {
-    return this.tsInType(() => {
+    return this.tsSetInTypeAnd(true, () => {
         const t = this.startNode();
         this.expect(returnToken);
         const node = this.startNode();
@@ -472,17 +560,13 @@ tsFillSignature(returnToken, signature)
 {
     const returnTokenRequired = returnToken === tt.arrow;
 
-    if (this.tsMatchLeftRelational()) {
-        // Disallow type parameters
-        this.unexpected();
-    }
+    signature.typeParameters = this.tsTryParseTypeParameters();
 
     this.expect(tt.parenL);
     signature.params = this.tsParseBindingListForSignature();
 
     if (returnTokenRequired || this.type === returnToken) {
-        this.expect(returnToken);
-        signature.returnType = this.tsParseTypeAnnotation(/* eatColon */ false);
+        signature.returnType = this.tsParseTypeOrTypePredicateAnnotation(returnToken);
     }
 }
 
@@ -496,7 +580,9 @@ tsParseFunctionOrConstructorType(type)
         this.next(); // eat 'new'
     }
    
-    this.tsFillSignature(tt.arrow, node);
+    this.tsSetAllowsConditionalTypesAnd(true, () => {
+        return this.tsFillSignature(tt.arrow, node)
+    });
     
     return this.finishNode(node, type);
 }
@@ -535,8 +621,31 @@ tsParseTypeOperator()
 }
 
 
-// tsParseConstraintForInferType() removed
-// tsParseInferType() removed
+tsParseConstraintForInferType()
+{
+    if (this.eat(tt._extends)) {
+        const constraint = this.tsSetAllowsConditionalTypesAnd(false, () => this.tsParseType());
+        
+        if (!this.#allowsConditionalTypes || this.type !== tt.question) {
+            return constraint;
+        }
+    }
+}
+
+
+tsParseInferType()
+{
+    const node = this.startNode();
+    this.expectContextual("infer");
+
+    const typeParameter = this.startNode();
+    typeParameter.name = this.tsParseTypeParameterName();
+    typeParameter.constraint = this.tsTryParse(() => this.tsParseConstraintForInferType());
+
+    node.typeParameter = this.finishNode(typeParameter, Syntax.TSTypeParameter);
+
+    return this.finishNode(node, Syntax.TSInferType);
+}
 
 
 tsParseLiteralTypeNode()
@@ -638,12 +747,34 @@ tsParseTupleElementType()
     const startPos = this.start;
     const rest = this.eat(tt.ellipsis);
 
-    let type = this.tsParseType();
+    let type = this.tsSetAllowsNullableTypesAnd(false, () => this.tsParseType());
+
+    const optional = this.eat(tt.question);
     const labeled = this.eat(tt.colon);
 
     if (labeled) {
-        // No labelled tuple element support
-        this.unexpected();
+        const labeledNode = this.tsStartNodeAtNode(type);
+        labeledNode.optional = optional;
+
+        if (
+            type.type === Syntax.TSTypeReference &&
+            !type.typeArguments &&
+            type.typeName.type === Syntax.Identifier
+        ) {
+            labeledNode.label = type.typeName;
+        } else {
+            this.raise(type.start, "Tuple members must be labeled with a simple identifier.");
+        }
+
+        labeledNode.elementType = this.tsParseType();
+
+        type = this.finishNode(labeledNode, Syntax.TSNamedTupleMember);
+
+    } else if (optional) {
+        const optionalTypeNode = this.tsStartNodeAtNode(type);
+
+        optionalTypeNode.typeAnnotation = type;
+        type = this.finishNode(optionalTypeNode, Syntax.TSOptionalType);
     }
 
     if (rest) {
@@ -780,6 +911,11 @@ tsParseArrayTypeOrHigher()
 {
     let type = this.tsParseNonArrayType();
 
+    // Only eat the '?' if we aren't parsing extendsType of a conditional type
+    const eatQuestion = () => {
+        return this.#allowsNullableTypes && this.eat(tt.question);
+    }
+
     const makeNullable = (inType) => {
         const node = this.tsStartNodeAtNode(inType);
         node.typeAnnotation = inType;
@@ -795,7 +931,7 @@ tsParseArrayTypeOrHigher()
                 type = this.finishNode(node, Syntax.TSArrayType);
                 
                 // Allow Foo[]?
-                if (this.eat(tt.question)) {
+                if (eatQuestion()) {
                     type = makeNullable(type);
                 }
 
@@ -807,7 +943,7 @@ tsParseArrayTypeOrHigher()
                 type = this.finishNode(node, Syntax.TSIndexedAccessType);
             }
 
-        } else if (this.eat(tt.question)) {
+        } else if (eatQuestion()) {
             // See parsePostfixTypeOrHigher() in TypeScript's parser.ts
             type = makeNullable(type);
 
@@ -822,11 +958,18 @@ tsParseArrayTypeOrHigher()
 
 tsParseTypeOperatorOrHigher()
 {
-    if (this.type == tt.name && this.value == "readonly" && !this.containsEsc) {
-        return this.tsParseTypeOperator();
+    if (this.type == tt.name && !this.containsEsc) {
+        const value = this.value;
+        if (value === "readonly" || value === "keyof" || value === "unique") {
+            return this.tsParseTypeOperator();
+        }
     }
     
-    return this.tsParseArrayTypeOrHigher();
+    if (this.isContextual("infer")) {
+        return this.tsParseInferType();    
+    }
+    
+    return this.tsSetAllowsConditionalTypesAnd(true, () => this.tsParseArrayTypeOrHigher());
 }
       
 
@@ -866,31 +1009,161 @@ tsParseNonConditionalType()
 
 tsParseType()
 {
-    return this.tsParseNonConditionalType();
+    const type = this.tsParseNonConditionalType();
+
+    if (
+        !this.#allowsConditionalTypes ||
+        this.tsHasPrecedingLineBreak() ||
+        !this.eat(tt._extends)
+    ) {
+        return type;
+    }
+
+    const node = this.tsStartNodeAtNode(type);
+
+    node.checkType = type;
+    node.extendsType = this.tsSetAllowsConditionalTypesAnd(false, () => {
+        this.tsSetAllowsNullableTypesAnd(false, () => {
+            return this.tsParseNonConditionalType();
+        });
+    });
+
+    this.expect(tt.question);
+    node.trueType = this.tsSetAllowsConditionalTypesAnd(true, () => this.tsParseType());
+
+    this.expect(tt.colon);
+    node.falseType = this.tsSetAllowsConditionalTypesAnd(true, () => this.tsParseType());
+
+    return this.finishNode(node, Syntax.TSConditionalType);
 }
 
 
-tsInType(callback)
+tsParseConstModifier(node)
 {
-    const oldInType = this._tsInType;
-    this._tsInType = true;
+    if (this.value === "const" && !this.containsEsc) {
+        this.next();
+        node.const = true;
+    }
+}
 
-    try {
-        return callback();
-    } finally {
-        this._tsInType = oldInType;
+
+tsParseInOutModifiers(node)
+{
+    if (this.value === "in" && !this.containsEsc) {
+        this.next();
+        node.in = true;
+    }
+
+    if (this.value === "out" && !this.containsEsc) {
+        this.next();
+        node.out = true;
+    }
+}
+
+
+tsParseTypeParameter(parseModifiers)
+{
+    const node = this.startNode();
+
+    if (parseModifiers) parseModifiers(node);
+
+    node.name = this.tsParseTypeParameterName();
+    node.constraint = this.tsEatThenParseType(tt._extends);
+    node.default = this.tsEatThenParseType(tt.eq);
+
+    return this.finishNode(node, Syntax.TSTypeParameter);
+}
+
+
+tsParseTypeParameters(parseModifiers)
+{
+    const node = this.startNode();
+
+    this.tsMatchLeftRelational() ? this.next() : this.unexpected();
+
+    node.params = this.tsParseDelimitedList(
+        "TypeParametersOrArguments",
+        this.tsParseTypeParameter.bind(this, parseModifiers),
+    );
+
+    this.tsMatchRightRelational() ? this.next() : this.unexpected();
+
+    if (node.params.length === 0) {
+        this.raise(this.start, "Type parameter list cannot be empty.");
+    }
+
+    return this.finishNode(node, Syntax.TSTypeParameterDeclaration);
+}
+
+
+tsTryParseTypeParameters(parseModifiers)
+{
+    if (this.tsMatchLeftRelational()) {
+        if (parseModifiers === "const") {
+            parseModifiers = this.tsParseConstModifier.bind(this);
+        } else if (parseModifiers === "inout") {
+            parseModifiers = this.tsParseInOutModifiers.bind(this);
+        }
+
+        return this.tsParseTypeParameters(parseModifiers);
     }
 }
 
 
 tsParseTypeArguments()
 {
-    this.expect(tt.relational);
-    let results = this.tsParseDelimitedList("TypeParametersOrArguments", this.tsParseType.bind(this));
-    this.exprAllowed = false
-    this.expect(tt.relational)
+    const node = this.startNode();
 
-    return results;
+    node.params = this.tsSetInTypeAnd(true, () => {
+        this.expect(tt.relational);
+
+        return this.tsParseDelimitedList(
+            "TypeParametersOrArguments",
+            this.tsParseType.bind(this)
+        );
+    });
+
+    if (!node.params.length) {
+        this.raise(this.start, "Type argument list cannot be empty.");
+    }
+
+    this.exprAllowed = false
+    this.expect(tt.relational);
+
+    return this.finishNode(node, Syntax.TSTypeParameterInstantiation);
+}
+
+
+tsParseReturnType()
+{
+    return this.tsParseTypeOrTypePredicateAnnotation(tt.colon);
+}
+
+
+tsParseHeritageClause(token)
+{
+    let originalStart = this.start;
+
+    let nodeType = token === "implements" ?
+        Syntax.TSClassImplements :
+        Syntax.TSInterfaceHeritage;
+    
+    let delimitedList = this.tsParseDelimitedList("HeritageClauseElement", () => {
+        const node = this.startNode();
+        node.expression = this.tsParseEntityName();
+
+        if (this.tsMatchLeftRelational()) {
+            node.typeArguments = this.tsParseTypeArguments();
+        }
+
+        return this.finishNode(node, nodeType);
+    });
+
+    if (!delimitedList.length) {
+        this.raise(originalStart, `'${token}' list cannot be empty.`);
+    }
+
+    return delimitedList;
 }
 
 

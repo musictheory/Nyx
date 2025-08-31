@@ -121,14 +121,20 @@ const TypeAnnotationTreeStructure = {
     TSArrayType:         [ "elementType" ],
     TSBigIntKeyword:     [ ],
     TSBooleanKeyword:    [ ],
+    TSClassImplements:   [ "expression", "typeArguments" ],
+    TSConditionalType:   [ "checkType", "extendsType", "trueType", "falseType" ],
     TSConstructorType:   [ "params", "returnType" ],
     TSFunctionType:      [ "params", "returnType" ],
     TSIndexedAccessType: [ "objectType", "indexType" ],
+    TSInferType:         [ "typeParameter" ],
+    TSInterfaceHeritage: [ "expression", "typeArguments" ],
     TSIntersectionType:  [ "types" ],
     TSLiteralType:       [ "literal" ],
+    TSNamedTupleMember:  [ "elementType", "label" ],
     TSNeverKeyword:      [ ],
     TSNullKeyword:       [ ],
     TSNumberKeyword:     [ ],
+    TSOptionalType:      [ "typeAnnotation" ],
     TSObjectKeyword:     [ ],
     TSQualifiedName:     [ "left", "right" ],
     TSRestType:          [ "typeAnnotation" ],
@@ -138,6 +144,9 @@ const TypeAnnotationTreeStructure = {
     TSTupleType:         [ "elementTypes" ],
     TSTypeAnnotation:    [ "typeAnnotation" ],
     TSTypeOperator:      [ "typeAnnotation" ],
+    TSTypeParameter:     [ "constraint", "default" ],
+    TSTypeParameterDeclaration:   [ "params" ],
+    TSTypeParameterInstantiation: [ "params" ],
     TSTypePredicate:     [ "typeAnnotation" ],
     TSTypeQuery:         [ "name", "typeArguments" ],
     TSTypeReference:     [ "name", "typeArguments" ],
@@ -161,7 +170,22 @@ export const TreeStructure = Object.assign({ },
         array.splice(array.indexOf(existing), 0, value);
     }
 
+    addAfter( TreeStructure.NewExpression,  "callee", "typeParameters" );
+
+    addAfter( TreeStructure.ClassDeclaration, "id", "typeParameters" );
+    addAfter( TreeStructure.ClassDeclaration, "superClass", "superTypeParameters" );
+    addAfter( TreeStructure.ClassDeclaration, "superTypeParameters", "implements" );
+
+    addAfter( TreeStructure.ClassExpression, "id", "typeParameters" );
+    addAfter( TreeStructure.ClassExpression, "superClass", "superTypeParameters" );
+    addAfter( TreeStructure.ClassExpression, "superTypeParameters", "implements" );
+
+    addAfter( TreeStructure.MethodDefinition, "key", "typeParameters" );
+
+    addAfter( TreeStructure.FunctionDeclaration, "id", "typeParameters" );
     addAfter( TreeStructure.FunctionDeclaration, "params", "returnType" );
+
+    addAfter( TreeStructure.FunctionExpression,  "id", "typeParameters" );
     addAfter( TreeStructure.FunctionExpression,  "params", "returnType" );
 
     TreeStructure.Identifier.push("typeAnnotation");

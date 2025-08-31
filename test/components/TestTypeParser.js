@@ -24,16 +24,20 @@ const SupportedTypeAnnotations = [
     "Foo",
     "string[]", "string[\n]",
 
-    "(string)", "(\nnumber)",
-    
     // Tuples
     "[ ]",
     "[ string, string ]",
     "[ string, string? ]",
     "[ string, ...string[] ]",
+    "[ start: number, end: number ]",
     
     // Object
     "{ a: string, b: string }",
+
+    // Types in parenthesis
+    "(string)", "(\nnumber)", "(5)",
+    "([ string? ])",
+    "({ a: string? })",
     
     // Intersection / Union
     "Foo | null",
@@ -49,6 +53,7 @@ const SupportedTypeAnnotations = [
     
     "typeof Foo",
     "typeof Foo.bar",
+    "typeof Foo<string>",
     "typeof\nFoo",
     "readonly number[]",
     "readonly\nnumber[]",
@@ -68,9 +73,6 @@ const SupportedTypeAnnotations = [
 ];
 
 const UnsupportedTypeAnnotations = [
-    // Labeled tuples
-    "[ start: number, end: number ]",
-
     // Import type
     'import("foo")',
     
@@ -79,11 +81,13 @@ const UnsupportedTypeAnnotations = [
 ];
 
 const InvalidTypeAnnotations = [
+    "[ x.y.z: number, number ]",
     "(a, !) => void",
     "[ , ]",
     "[ null null ]",
     "-foo",
-    "+42"
+    "+42",
+    "Foo<>"
 ];
 
 

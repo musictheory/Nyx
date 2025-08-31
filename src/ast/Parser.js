@@ -33,6 +33,9 @@ function checkKeyName(node, name)
 
 export class Parser extends TypeParser {
 
+#newTypeParametersRefStack = [ ];
+
+
 static parse(contents, options)
 {
     return super.parse(contents, options ?? {
@@ -113,6 +116,18 @@ parseBindingAtom()
 }
 
 
+parseClassId(node, isStatement)
+{
+    if (!isStatement && this.isContextual("implements")) {
+        return;
+    }
+
+    super.parseClassId(node, isStatement);
+
+    node.typeParameters = this.tsTryParseTypeParameters("inout");
+}
+
+
 parseClassField(node)
 {
     // check for optional, if in interface
@@ -134,6 +149,32 @@ parseClassField(node)
 }
 
 
+parseClassSuper(node)
+{
+    super.parseClassSuper(node);
+    
+    if (node.superClass && this.tsMatchLeftRelational()) {
+        node.superTypeParameters = this.tsParseTypeArguments();
+    }
+
+    if (this.eatContextual("implements")) {
+        node.implements = this.tsParseHeritageClause("implements");
+    }
+}
+            
+
+parseClassMethod(method, isGenerator, isAsync, allowsDirectSuper)
+{
+    if (this.nxInInterface) {
+        method.optional = this.eat(tt.question);
+    }
+
+    method.typeParameters = this.tsTryParseTypeParameters("const");
+
+    super.parseClassMethod(method, isGenerator, isAsync, allowsDirectSuper);
+}
+
+
 parseMethod(isGenerator, isAsync, allowDirectSuper)
 {
     let previousAllowOptionalIdent = this.nxAllowOptionalIdent;
@@ -152,19 +193,10 @@ parseFunctionParams(node)
     let previousAllowOptionalIdent = this.nxAllowOptionalIdent;
     this.nxAllowOptionalIdent = true;
     
+    node.typeParameters = this.tsTryParseTypeParameters("const");
     super.parseFunctionParams(node);
     
     this.nxAllowOptionalIdent = previousAllowOptionalIdent
-}
-
-
-parseClassMethod(method, isGenerator, isAsync, allowsDirectSuper)
-{
-    if (this.nxInInterface) {
-        method.optional = this.eat(tt.question);
-    }
-
-    super.parseClassMethod(method, isGenerator, isAsync, allowsDirectSuper);
 }
 
 
@@ -178,7 +210,6 @@ shouldParseExportStatement()
         super.shouldParseExportStatement()
     );
 }
-
 
 
 parseImport(node)
@@ -206,7 +237,7 @@ parseImport(node)
 parseFunctionBody(node, isArrowFunction, isMethod, forInit)
 {
     if (this.type == tt.colon) {
-        node.returnType = this.tsParseTypeOrTypePredicateAnnotation(tt.colon);
+        node.returnType = this.tsParseReturnType();
     }
     
     // Allow body-less functions and methods
@@ -230,6 +261,21 @@ parseParenItem(item)
 }
 
 
+parseNew()
+{
+    this.#newTypeParametersRefStack.push({ });
+
+    let result = super.parseNew();
+
+    let typeParametersRef = this.#newTypeParametersRefStack.pop();
+    if (typeParametersRef !== undefined) {
+        result.typeParameters = typeParametersRef.value;
+    }
+
+    return result;
+}
+
+
 parseSubscript(base, startPos, startLoc, noCalls, maybeAsyncArrow, optionalChained, forInit)
 {
     if (
@@ -244,7 +290,32 @@ parseSubscript(base, startPos, startLoc, noCalls, maybeAsyncArrow, optionalChain
 
         return this.finishNode(node, Syntax.NXNonNullExpression);
     }
-    
+
+    // We currently only support type parameters as arguments to a
+    // NewExpression with an Identifier 'callee':
+    //
+    // new Identifier<string>(
+    //  
+    if (this.#newTypeParametersRefStack.length) {
+        let typeParametersRef = this.#newTypeParametersRefStack.at(-1);
+
+        if (
+            base.type === Syntax.Identifier &&
+            this.tsMatchLeftRelational() &&
+            typeParametersRef !== undefined &&
+            typeParametersRef.typeParameter === undefined
+        ) {
+            let state = this.saveState();
+
+            typeParametersRef.value = this.tsTryParseTypeParameters();
+            
+            if (this.type !== tt.parenL) {
+                typeParametersRef.value = null;
+                this.restoreState(state);
+            }
+        }
+    }
+
     return super.parseSubscript(base, startPos, startLoc, noCalls, maybeAsyncArrow, optionalChained, forInit);
 }
 
@@ -368,8 +439,8 @@ nxMaybeParseTypeDefinition()
     }
 
     node.id = this.parseIdent();
-    node.params = params;
-
+    node.typeParameters = this.tsTryParseTypeParameters("inout");
+    
     this.expect(tt.eq);
     
     node.typeAnnotation = this.tsParseTypeAnnotation(false);
@@ -466,22 +537,6 @@ nxParseAtIdentifier()
 }
 
 
-nxParseHeritageClause(token)
-{
-    let originalStart = this.start;
-
-    let delimitedList = this.tsParseDelimitedList("HeritageClauseElement", () => {
-        return this.tsParseEntityName()
-    });
-
-    if (!delimitedList.length) {
-        this.raise(originalStart, `'${token}' list cannot be empty.`);
-    }
-
-    return delimitedList;
-}
-
-
 nxMaybeParseInterfaceDeclaration()
 {
     const state = this.saveState();
@@ -502,9 +557,10 @@ nxMaybeParseInterfaceDeclaration()
     this.strict = true;
       
     node.id = this.parseIdent();
+    node.typeParameters = this.tsTryParseTypeParameters("inout");
     
     if (this.eat(tt._extends)) {
-        node.extends = this.nxParseHeritageClause("extends");
+        node.extends = this.tsParseHeritageClause("extends");
     }
     
     let interfaceBody = this.startNode();
@@ -657,8 +713,12 @@ parseClassElement(constructorAllowsSuper)
 
         this.nxParseProp(node);
 
-    // Parse element value
-    } else if (this.type === tt.parenL || kind !== "method" || isGenerator || isAsync) {
+    } else if (
+        this.type === tt.parenL ||
+        kind !== "method" ||
+        isGenerator || isAsync ||
+        this.tsMatchLeftRelational()
+    ) {
         const isConstructor = !node.static && checkKeyName(node, "constructor");
         const allowsDirectSuper = isConstructor && constructorAllowsSuper;
 
@@ -760,7 +820,7 @@ nxParseFunc(node, isAsync, isGenerator)
     }
     
     if (this.type == tt.colon) {
-        node.returnType = this.tsParseTypeOrTypePredicateAnnotation(tt.colon);
+        node.returnType = this.tsParseReturnType();
     }
 
     if (this.type == tt.braceL) {

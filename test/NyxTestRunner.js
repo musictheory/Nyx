@@ -151,7 +151,9 @@ class TestCase
         }
 
         for (let warning of result.warnings) {
-            canRun = false;
+            if (!warning.typechecker) {
+                canRun = false;
+            }
 
             let map = warning.typechecker ? actualTypeWarningMap : actualWarningMap;
             map.set(`${warning.file}:${warning.line}`, warning);

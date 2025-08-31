@@ -1,0 +1,65 @@
+// @suite: Feature: interface
+
+// @test: extends and implements
+// @typecheck
+// ============================================================================
+
+interface IFoo { foo(): void }
+interface IBar extends IFoo { bar(): void }
+interface IBaz { baz(): void }
+
+class BarBaz implements IBar, IBaz { // @type
+    bar() { }
+    baz() { }
+}
+
+const Baz = class implements IBaz {
+    baz() { }
+};
+
+function callsFoo(x: IFoo) { x.foo?.(); }
+
+callsFoo(new BarBaz()) // @type
+
+
+
+// @test: type parameters in heritage
+// @typecheck
+// ============================================================================
+
+interface IFoo<T> { takes(x: T): void }
+
+class TakesString implements IFoo<string> {
+    takes(x: string): void { }
+}
+
+let x = new TakesString();
+x.takes("foo");
+
+
+
+// @test: Optionals in interface
+// ============================================================================
+
+interface IFoo {
+    func foo (bar: string);
+    func foo?(baz: string);
+
+    bar?: number;
+}
+
+class Foo {
+    func foo (bar: string) { }
+}
+
+function takesIFoo(foo: IFoo) { }
+
+let foo = new Foo();
+takesIFoo(foo);
+
+
+// @test: Error: implements list cannot be empty
+// ============================================================================
+
+class BarBaz implements { } // @error
+

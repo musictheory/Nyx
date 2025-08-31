@@ -141,26 +141,6 @@ function foo(a, b, c, d, e) {
 foo("A", ...[ "B", "C", "D" ]);
 
 
-
-// @test: Optional func in interface
-// ============================================================================
-
-interface IFoo {
-    func foo (bar: string);
-    func foo?(baz: string);
-}
-
-class Foo {
-    func foo (bar: string) { }
-}
-
-function takesIFoo(foo: IFoo) { }
-
-let foo = new Foo();
-takesIFoo(foo);
-
-
-
 // @test: Error on optional parameter
 // ============================================================================
 
