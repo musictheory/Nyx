@@ -66,7 +66,11 @@ const SupportedTypeAnnotations = [
 
     "(a: string, ...rest) => number",
     "(a: string, [ b, c ]) => number",
-    
+    "(a: string, { b, c }) => number",
+    "(a: string, { b: b2, c: c2 }) => number",
+    "(a: string, [ b, c ]: [ number, number ]) => number",
+    "(a: string, { b, c }: { b: number, c: number }) => number",
+
     "([,]) => void",
     
     "new () => Foo"

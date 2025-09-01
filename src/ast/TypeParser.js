@@ -121,7 +121,6 @@ tsSetAllowsNullableTypesAnd(yn, callback)
 }
 
 
-
 // Replaces:
 // tsInAllowConditionalTypesContext()
 // tsInDisallowConditionalTypesContext()
@@ -180,6 +179,13 @@ tsResetStartLocation(node, start, startLoc)
 {
     node.start = start;
     node.loc.start = startLoc;
+}
+
+
+tsResetEndLocation(node, endPos = this.lastTokEnd, endLoc = this.lastTokEndLoc)
+{
+    node.end = endPos;
+    node.loc.end = endLoc;
 }
 
 

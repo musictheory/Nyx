@@ -187,6 +187,10 @@ export const TreeStructure = Object.assign({ },
     addAfter( TreeStructure.FunctionExpression,  "params", "returnType" );
 
     TreeStructure.Identifier.push("typeAnnotation");
+    TreeStructure.RestElement.push("typeAnnotation");
+    TreeStructure.ObjectPattern.push("typeAnnotation");
+    TreeStructure.ArrayPattern.push("typeAnnotation");
+
     TreeStructure.PropertyDefinition.push("typeAnnotation");
 }
 

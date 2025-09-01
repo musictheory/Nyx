@@ -34,6 +34,7 @@ function checkKeyName(node, name)
 export class Parser extends TypeParser {
 
 #newTypeParametersRefStack = [ ];
+#allowsOptionalIdent = false;
 
 
 static parse(contents, options)
@@ -75,6 +76,19 @@ restoreState(state)
 }
 
 
+nxSetAllowsOptionalIdentAnd(yn, callback)
+{
+    let oldAllowsOptionalIdent = this.#allowsOptionalIdent;
+    this.#allowsOptionalIdent = yn;
+    
+    try {
+        return callback();
+    } finally {
+        this.#allowsOptionalIdent = oldAllowsOptionalIdent;
+    }
+}
+
+
 readToken(code)
 {
     if (isIdentifierStart(code, true) || code === 92 /* '\' */) {
@@ -86,33 +100,52 @@ readToken(code)
     return this.getTokenFromCode(code)
 }
 
+parseVarId(decl, kind)
+{
+    super.parseVarId(decl, kind);
+
+    if (this.type == tt.colon) {
+        decl.id.typeAnnotation = this.tsParseTypeAnnotation();
+        this.tsResetEndLocation(decl.id);
+    }
+}
+
+
+parseAssignableListItem(allowModifiers)
+{
+    // If we have both a type annotation and an assignment, our first call to
+    // parseMaybeDefault won't see the '=' token
+    var left = this.parseMaybeDefault(this.start, this.startLoc);
+
+    // parseBindingListItem() will parse the type annotation
+    this.parseBindingListItem(left);
+  
+    // Call parseMaybeDefault() again to parse the assignment
+    return this.parseMaybeDefault(left.start, left.loc, left);
+}
+
+
+parseBindingListItem(param)
+{
+    if (this.type == tt.question && this.#allowsOptionalIdent) {
+        param.optional = true;
+        param.question = this.nxParsePunctuation();
+    }
+
+    if (this.type == tt.colon) {
+        param.typeAnnotation = this.tsParseTypeAnnotation();
+    }
+
+    this.tsResetEndLocation(param);
+
+    return param;
+}
+
 
 parseBindingAtom()
 {
-    let result;
-
     // Allow 'this' as parameter name
-    if (this.type == tt._this) {
-        result = this.parseIdent(true);
-    } else {
-        result = super.parseBindingAtom();
-    }
-
-    if (result.type == Syntax.Identifier) {
-        if (this.type == tt.question && this.nxAllowOptionalIdent) {
-            result.optional = true;
-            result.question = this.nxParsePunctuation();
-
-            this.finishNode(result, Syntax.Identifier);
-        }
-
-        if (this.type == tt.colon) {
-            result.typeAnnotation = this.tsParseTypeAnnotation();
-            this.finishNode(result, Syntax.Identifier);
-        }
-    }
-
-    return result;
+    return (this.type == tt._this) ? this.parseIdent(true) : super.parseBindingAtom();
 }
 
 
@@ -183,26 +216,18 @@ parseClassMethod(method, isGenerator, isAsync, allowsDirectSuper)
 
 parseMethod(isGenerator, isAsync, allowDirectSuper)
 {
-    let previousAllowOptionalIdent = this.nxAllowOptionalIdent;
-    this.nxAllowOptionalIdent = true;
-
-    let result = super.parseMethod(isGenerator, isAsync, allowDirectSuper);
-    
-    this.nxAllowOptionalIdent = previousAllowOptionalIdent
-
-    return result;
+    return this.nxSetAllowsOptionalIdentAnd(true, () => {
+        return super.parseMethod(isGenerator, isAsync, allowDirectSuper);
+    });
 }
 
 
 parseFunctionParams(node)
 {
-    let previousAllowOptionalIdent = this.nxAllowOptionalIdent;
-    this.nxAllowOptionalIdent = true;
-    
-    node.typeParameters = this.tsTryParseTypeParameters("const");
-    super.parseFunctionParams(node);
-    
-    this.nxAllowOptionalIdent = previousAllowOptionalIdent
+    return this.nxSetAllowsOptionalIdentAnd(true, () => {
+        node.typeParameters = this.tsTryParseTypeParameters("const");
+        super.parseFunctionParams(node);
+    });
 }
 
 
