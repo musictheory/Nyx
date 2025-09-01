@@ -144,7 +144,7 @@ const TypeAnnotationTreeStructure = {
     TSTupleType:         [ "elementTypes" ],
     TSTypeAnnotation:    [ "typeAnnotation" ],
     TSTypeOperator:      [ "typeAnnotation" ],
-    TSTypeParameter:     [ "constraint", "default" ],
+    TSTypeParameter:     [ "name", "constraint", "default" ],
     TSTypeParameterDeclaration:   [ "params" ],
     TSTypeParameterInstantiation: [ "params" ],
     TSTypePredicate:     [ "typeAnnotation" ],

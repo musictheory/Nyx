@@ -272,13 +272,6 @@ tsParseDelimitedList(kind, parseElement)
 }
 
 
-tsParseTypeParameterName()
-{
-    const typeName = this.parseIdent();
-    return typeName.name;
-}
-
-
 tsEatThenParseType(token)
 {
     return this.type === token ? this.tsNextThenParseType() : undefined;
@@ -657,7 +650,7 @@ tsParseInferType()
     this.expectContextual("infer");
 
     const typeParameter = this.startNode();
-    typeParameter.name = this.tsParseTypeParameterName();
+    typeParameter.name = this.parseIdent();
     typeParameter.constraint = this.tsTryParse(() => this.tsParseConstraintForInferType());
 
     node.typeParameter = this.finishNode(typeParameter, Syntax.TSTypeParameter);
@@ -1096,7 +1089,7 @@ tsParseTypeParameter(parseModifiers)
 
     if (parseModifiers) parseModifiers(node);
 
-    node.name = this.tsParseTypeParameterName();
+    node.name = this.parseIdent();
     node.constraint = this.tsEatThenParseType(tt._extends);
     node.default = this.tsEatThenParseType(tt.eq);
 
