@@ -54,7 +54,7 @@ Nyx will perform dependency analysis and re-order input files as necessary. The 
 
 For type-checking, Nyx borrows much of TypeScript's type annotation syntax.
 
-Single-word types such as `string`, `void`, or `Foo` are passed directly to TypeScript.
+See [Types.ts](https://github.com/musictheory/Nyx/blob/main/docs/Types.ts) for detailed examples supported type annotation. This file is valid TypeScript as well as valid Nyx.
 
 
 #### The optional type
@@ -81,7 +81,7 @@ While similar, both syntaxes are needed to support the subtle differences betwee
 
 #### Object types
 
-Nyx supports [object types](https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#object-types) as well as [optional properties](https://www.typescriptlang.org/docs/handbook/2/objects.html#index-signatures):
+Nyx supports a simplified version of [object types](https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#object-types) with [optional properties](https://www.typescriptlang.org/docs/handbook/2/objects.html#index-signatures):
 
 ```typescript
 let myPoint: {
@@ -96,7 +96,7 @@ Nyx does not support [index signatures](https://www.typescriptlang.org/docs/hand
 
 #### Tuple types
 
-Nyx supports [tuple types](https://www.typescriptlang.org/docs/handbook/2/objects.html#tuple-types):
+Nyx fully supports [tuple types](https://www.typescriptlang.org/docs/handbook/2/objects.html#tuple-types):
 
 ```typescript
 let tuple:  [ number, string  ];
@@ -104,31 +104,18 @@ let tuple2: [ number, string? ];
 let tuple3: [ number, string, ...boolean[] ];
 ```
 
-Nyx does not support [labeled tuple elements](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-4-0.html#labeled-tuple-elements).
+In a tuple, `string?` indicates an optional element which may be `undefined`. This is different from Nyx's optional type. To indicate an optional type (`string | null`), encase the `string?` inside parenthesis:
 
+```typescript
+let tuple: [ string, (string?), number? ] = [ "foo", null ];
+```
 
-#### Generics
+You may also use a labelled tuple member:
 
-Nyx supports type arguments such as `Map<string, Foo>`, `Set<Foo>`, and `Promise<Foo>`.
+```typescript
+let tuple: [ string, label: string? ] = [ "foo", null ];
+```
 
-Nyx does not support declaring [generic types](https://www.typescriptlang.org/docs/handbook/2/objects.html#generic-object-types) or [generic functions](https://www.typescriptlang.org/docs/handbook/2/functions.html#generic-functions). In other words: while Nyx may use generics defined in external `.d.ts` files, it currently does not support defining its own in `.nx` files.
-
-
-#### Other types
-
-In addition, Nyx supports the following TypeScript types:
-
-| Annotation          | Notes                                                      
-|---------------|------------------------------------------------------------------
-| `Foo[]`
-| `Foo[][]`
-| `Foo \| Bar`
-| `Foo & Bar`
-| `readonly Foo`
-| `typeof Foo`
-| `"string"`    | *No support for template string literals*
-| `-42`        
-| `(a: string) => void` | See [Function Type Expressions](https://www.typescriptlang.org/docs/handbook/2/functions.html#function-type-expressions) 
 
 #### Additional TypeScript Features
 
