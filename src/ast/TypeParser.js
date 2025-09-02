@@ -750,7 +750,7 @@ tsParseObjectType()
         node.members.push(this.finishNode(member, Syntax.NXObjectTypeMember));
         
         if (this.type != tt.braceR) {
-            this.expect(tt.comma);
+            this.expect(this.type == tt.comma ? tt.comma : tt.semi);
         }
     }
 
