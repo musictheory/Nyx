@@ -26,7 +26,7 @@ const Usage = `Usage: nyxdev.js [OPTIONS] INPUT_FILES
     -t, --ts, --typescript     Output TypeScript for typechecker
         --ast, --dump-ast      Output Nyx AST
         --dump-function-map    Output function map (internal use only)
-        --raw-errors           Show raw errors
+    -e  --errors               Expand errors and shows stack trace
     -h, --help                 Display this help
 
     Respository:  https://github.com/musictheory/Nyx
@@ -50,9 +50,9 @@ const ParseArgsOptions = {
     // Dumps internal function map
     "dump-function-map": { type: "boolean" },
     
-    
-    // --raw-errors
-    "raw-errors": { type: "boolean" },
+    // --errors
+    // Expands errors and shows stack trace
+    "errors": { type: "boolean", short: "e" },
 }
 
 
