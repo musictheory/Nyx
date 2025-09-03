@@ -19,7 +19,29 @@ import { TypeParser } from "./TypeParser.js";
 tt.atId = new TokenType("atId", { startsExpr: true });
 
 
-// From acorn, used by parseClassElement()
+// v-- Begin acorn internals
+
+const SCOPE_FUNCTION  = 2;
+const SCOPE_ASYNC     = 4;
+const SCOPE_GENERATOR = 8;
+const SCOPE_ARROW     = 16;
+const SCOPE_SUPER     = 64;
+
+const BIND_NONE    = 0;
+const BIND_VAR     = 1;
+const BIND_LEXICAL = 2;
+
+const FUNC_STATEMENT         = 1;
+const FUNC_HANGING_STATEMENT = 2;
+const FUNC_NULLABLE_ID       = 4;
+
+
+function functionFlags(async, generator)
+{
+    return SCOPE_FUNCTION | (async ? SCOPE_ASYNC : 0) | (generator ? SCOPE_GENERATOR : 0);
+}
+
+
 function checkKeyName(node, name)
 {
     const key = node.key;
@@ -29,6 +51,8 @@ function checkKeyName(node, name)
         key.type === Syntax.Literal    && key.value === name
     )
 }
+
+// ^-- End acorn internals
 
 
 export class Parser extends TypeParser {
@@ -206,8 +230,13 @@ parseClassMethod(method, isGenerator, isAsync, allowsDirectSuper)
 
     let result = super.parseClassMethod(method, isGenerator, isAsync, allowsDirectSuper);
 
+    let value = result.value;
+    if (value.type == Syntax.FunctionExpression && !value.body) {
+        value.type = Syntax.TSEmptyBodyFunctionExpression;
+    }
+
     if (typeParameters) {
-        result.value.typeParameters = typeParameters;
+        value.typeParameters = typeParameters;
     }
 
     return result;
@@ -219,6 +248,63 @@ parseMethod(isGenerator, isAsync, allowDirectSuper)
     return this.nxSetAllowsOptionalIdentAnd(true, () => {
         return super.parseMethod(isGenerator, isAsync, allowDirectSuper);
     });
+}
+
+
+parseFunction(node, statement, allowExpressionBody, isAsync, forInit)
+{
+    this.initFunction(node);
+
+    if (this.type === tt.star && (statement & FUNC_HANGING_STATEMENT)) {
+        this.unexpected();
+    }
+
+    node.generator = this.eat(tt.star);
+    node.async = !!isAsync;
+
+    if (statement & FUNC_STATEMENT) {
+        node.id = (statement & FUNC_NULLABLE_ID) && this.type !== tt.name ? null : this.parseIdent();
+    }
+
+    let oldYieldPos = this.yieldPos;
+    let oldAwaitPos = this.awaitPos;
+    let oldAwaitIdentPos = this.awaitIdentPos;
+
+    this.yieldPos = 0;
+    this.awaitPos = 0;
+    this.awaitIdentPos = 0;
+
+    this.enterScope(functionFlags(node.async, node.generator));
+
+    if (!(statement & FUNC_STATEMENT)) {
+        node.id = (this.type === tt.name) ? this.parseIdent() : null;
+    }
+
+    this.parseFunctionParams(node);
+    this.parseFunctionBody(node, allowExpressionBody, false, forInit);
+
+    // Now check id
+    if (node.id && !(statement & FUNC_HANGING_STATEMENT)) {
+        let bindType = this.treatFunctionsAsVar ? BIND_VAR : BIND_LEXICAL;
+        if (!node.body) bindType = BIND_NONE;
+        this.checkLValSimple(node.id, bindType);
+    }
+
+    this.yieldPos = oldYieldPos;
+    this.awaitPos = oldAwaitPos;
+    this.awaitIdentPos = oldAwaitIdentPos;
+
+    let type;
+    
+    if (!node.body) {
+        type = Syntax.TSDeclareFunction;
+    } else if (statement & FUNC_STATEMENT) {
+        type = Syntax.FunctionDeclaration;
+    } else {
+        type = Syntax.FunctionExpression;
+    }
+
+    return this.finishNode(node, type);
 }
 
 
@@ -855,14 +941,8 @@ nxParseFunc(node, isAsync, isGenerator)
     }
 
     if (this.type == tt.braceL) {
-        let flags = 66; // 2(SCOPE_FUNCTION) + 64(SCOPE_SUPER)
-        if (isAsync) flags += 4; // SCOPE_ASYNC
-        if (isGenerator) flags += 8; // SCOPE_GENERATOR
-
-        this.enterScope(flags);
-
+        this.enterScope(functionFlags(isAsync, isGenerator) + SCOPE_SUPER);
         node.body = this.parseBlock();
-
         this.exitScope();
     }
 

@@ -1,0 +1,34 @@
+// @test: Issue 24
+// @typecheck
+// ============================================================================
+
+function takesString(x: string) { }
+function takesNumber(x: number) { }
+
+function toggle(x: string): number
+function toggle(x: number): string
+function toggle(x: string|number): string|number
+{
+    return (typeof x == "string") ? Number(x) : String(x);
+}
+
+
+takesNumber(toggle("Foo"));
+takesString(toggle(5));
+takesNumber(toggle(5)); // @type
+
+
+class Toggler {
+    toggle(x: string): number
+    toggle(x: number): string
+    toggle(x: string|number): string|number
+    {
+        return (typeof x == "string") ? Number(x) : String(x);
+    }
+}
+
+let toggler = new Toggler();
+
+takesNumber(toggler.toggle("Foo"));
+takesString(toggler.toggle(5));
+takesNumber(toggler.toggle(5)); // @type

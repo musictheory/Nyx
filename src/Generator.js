@@ -101,7 +101,8 @@ generate()
             type == Syntax.NXInterfaceDeclaration ||
             type == Syntax.NXTypeDeclaration      ||
             type == Syntax.TSTypeParameterDeclaration ||
-            type == Syntax.TSTypeParameterInstantiation
+            type == Syntax.TSTypeParameterInstantiation ||
+            type == Syntax.TSDeclareFunction
         )) {
             return true;
         }
@@ -323,6 +324,11 @@ generate()
 
     function handleMethodDefinition(node)
     {
+        if (!forTypechecker && node.value.type == Syntax.TSEmptyBodyFunctionExpression) {
+            modifier.remove(node);
+            return Traverser.SkipNode;
+        }
+
         isStaticStack.push(currentIsStatic);
         currentIsStatic = node.static;
         
@@ -906,7 +912,7 @@ generate()
             handlePropertyDefinition(node);
 
         } else if (type === Syntax.MethodDefinition) {
-            handleMethodDefinition(node);
+            return handleMethodDefinition(node);
 
         } else if (type === Syntax.NXPropDefinition) {
             handleNXPropDefinition(node);

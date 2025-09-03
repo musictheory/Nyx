@@ -124,6 +124,8 @@ const TypeAnnotationTreeStructure = {
     TSClassImplements:   [ "expression", "typeArguments" ],
     TSConditionalType:   [ "checkType", "extendsType", "trueType", "falseType" ],
     TSConstructorType:   [ "params", "returnType" ],
+    TSDeclareFunction:   [ "id", "params" ],
+    TSEmptyBodyFunctionExpression: [ "id", "params" ],
     TSFunctionType:      [ "params", "returnType" ],
     TSIndexedAccessType: [ "objectType", "indexType" ],
     TSInferType:         [ "typeParameter" ],
