@@ -21,19 +21,18 @@ tt.atId = new TokenType("atId", { startsExpr: true });
 
 // v-- Begin acorn internals
 
-const SCOPE_FUNCTION  = 2;
-const SCOPE_ASYNC     = 4;
-const SCOPE_GENERATOR = 8;
-const SCOPE_ARROW     = 16;
-const SCOPE_SUPER     = 64;
+const SCOPE_FUNCTION   = 2;
+const SCOPE_ASYNC      = 4;
+const SCOPE_GENERATOR  = 8;
+const SCOPE_ARROW      = 16;
+const SCOPE_SUPER      = 64;
 
-const BIND_NONE    = 0;
-const BIND_VAR     = 1;
-const BIND_LEXICAL = 2;
+const BIND_NONE        = 0;
+const BIND_VAR         = 1;
+const BIND_LEXICAL     = 2;
 
-const FUNC_STATEMENT         = 1;
-const FUNC_HANGING_STATEMENT = 2;
-const FUNC_NULLABLE_ID       = 4;
+const FUNC_STATEMENT   = 1;
+const FUNC_NULLABLE_ID = 4;
 
 
 function functionFlags(async, generator)
@@ -255,9 +254,12 @@ parseFunction(node, statement, allowExpressionBody, isAsync, forInit)
 {
     this.initFunction(node);
 
+    // FUNC_HANGING_STATEMENT cannot be set as we always parse in strict mode
+    /* 
     if (this.type === tt.star && (statement & FUNC_HANGING_STATEMENT)) {
         this.unexpected();
     }
+    */
 
     node.generator = this.eat(tt.star);
     node.async = !!isAsync;
@@ -283,8 +285,9 @@ parseFunction(node, statement, allowExpressionBody, isAsync, forInit)
     this.parseFunctionParams(node);
     this.parseFunctionBody(node, allowExpressionBody, false, forInit);
 
-    // Now check id
-    if (node.id && !(statement & FUNC_HANGING_STATEMENT)) {
+    // FUNC_HANGING_STATEMENT cannot be set as we always parse in strict mode
+    //
+    if (node.id /* && !(statement & FUNC_HANGING_STATEMENT) */) {
         let bindType = this.treatFunctionsAsVar ? BIND_VAR : BIND_LEXICAL;
         if (!node.body) bindType = BIND_NONE;
         this.checkLValSimple(node.id, bindType);
