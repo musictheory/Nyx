@@ -641,14 +641,6 @@ generate()
             modifier.remove(node.expression.end, node.end);
         }
     }
-
-    function handleTSTypeAnnotation(node, parent)
-    {
-        if (!forTypechecker) {
-            modifier.remove(node);
-            toSkip.add(node.value);
-        }
-    }
     
     function handleNXNullableType(node)
     {
@@ -886,9 +878,6 @@ generate()
 
         } else if (type === Syntax.NXNonNullExpression) {
             handleNXNonNullExpression(node);
-
-        } else if (type === Syntax.TSTypeAnnotation) {
-            handleTSTypeAnnotation(node, parent);
             
         } else if (type === Syntax.NXNullableType) {
             handleNXNullableType(node);
