@@ -22,12 +22,13 @@ new B();
 
 
 // @test: Basic Order
+// @typecheck
 // ============================================================================
 
 class A {
     readonly prop called: string[] = [ ];
 
-    init(n: number) {
+    init(n?: number) {
         if (n === undefined) {
             this.add("A.init()");
         } else {
@@ -62,7 +63,7 @@ class C extends B {
     }
 }
 
-function check(x, called) {
+function check(x: A, called: string[]) {
     assert.deepEqual(x.called, called);
 }
 
