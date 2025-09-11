@@ -268,9 +268,15 @@ function vFilesDefs(key, value)
 //
 function vPrependAppend(key, value)
 {
-    if (isEmpty(value)) return [ ];
-    if (isString(value)) return value.split("\n");
-    if (isStringArray(value)) return value;
+    if (isEmpty(value)) {
+        return [ ];
+
+    } else if (isString(value)) {
+        return value.split("\n");
+
+    } else if (isStringArray(value)) {
+        return value.map(s => s.split("\n")).flat();
+    }
     
     throw new Error(`Compiler option '${key}' must be a string or an array of strings.`);
 }
