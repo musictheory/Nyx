@@ -35,7 +35,7 @@ const ContentsC = `
 `;
 
 
-async function assertNoIssues(result)
+function assertNoIssues(result)
 {
     assert.deepStrictEqual(result.warnings, [ ]);
     assert.deepStrictEqual(result.errors,   [ ]);
