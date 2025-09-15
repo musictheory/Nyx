@@ -22,7 +22,7 @@
     "devDependencies": { },
     "dependencies": {
         "acorn":       "8.x",
-        "source-map":  "0.5.x",
+        "source-map":  "0.7.x",
         "typescript":  "5.9.x"
     },
     "scripts": {
