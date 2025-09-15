@@ -26,6 +26,8 @@ let sIsFastTestEnabled = false;
 
 
 if (workerData == import.meta.url) {
+    Error.stackTraceLimit = 50;
+
     parentPort.on("message", async message => {
         let { type, args } = message;
 
@@ -141,15 +143,20 @@ async function prepare(checkerID, groupID, inOptions)
                     return ts.ScriptSnapshot.fromString(contents);
                 },
                 
-                
-                resolveModuleNameLiterals: (moduleLiterals, containingFile, redirectedReference, options, containingSourceFile, reusedNames) => {
+                resolveModuleNameLiterals: (moduleLiterals, containingFile) => {
                     let result = moduleLiterals.map(literal => {
                         let dirname = path.dirname(containingFile);
                         let resolvedFileName = path.normalize(path.join(dirname, literal.text)) + ".ts";
-                        return { resolvedModule: { resolvedFileName, extension: "ts",
-                        resolvedUsingTsExtension: false } }
+
+                        return {
+                            resolvedModule: {
+                                resolvedFileName,
+                                extension: "ts",
+                                resolvedUsingTsExtension: false
+                            }
+                        }
                     });
-                    
+
                     return result;
                 },
 
@@ -188,7 +195,6 @@ async function typecheck(checkerID, entries, filesToCheck)
         sFileMap.set(entry.file, entry);
     }
 
-
     let diagnostics = [ service.getCompilerOptionsDiagnostics() ];
 
     sFilesToCheck.map(fileToCheck => {
@@ -208,6 +214,29 @@ async function typecheck(checkerID, entries, filesToCheck)
 
     return diagnostics;
 }
+
+
+// DebugTypeWorker is used when "dev-main-thread-ts" is set to true.
+// It runs typescript on the main thread and makes console.log debugging
+// easier.
+//
+/* node:coverage disable */
+export class DebugTypeWorker {
+
+prepare(checkerID, groupID, options)
+{
+    prepare(checkerID, groupID, options)
+}
+
+
+async work(checkerID, entries, filesToCheck)
+{
+    return typecheck(checkerID, entries, filesToCheck);
+}
+
+}
+/* node:coverage enable */
+
 
 
 export class TypeWorker {

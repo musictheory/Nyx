@@ -62,6 +62,7 @@ for (let [ key, value ] of Object.entries({
     "dev-omit-runtime":          { v: vBoolean }, // omit runtime (for nyxdev.js tool)
     "dev-output-typescript":     { v: vBoolean }, // output typescript code (for nyxdev.js tool)
     "dev-fast-test":             { v: vBoolean }, // set by test runner to skip TypeScript loading
+    "dev-main-thread-ts":        { v: vBoolean }, // run TypeWorker on main thread for debugging
 
     // Private options
     // These are still used in our internal projects and will eventually go away

@@ -13,6 +13,7 @@ import { CompilerIssue   } from "../model/CompilerIssue.js";
 import { CompilerOptions } from "../model/CompilerOptions.js";
 import { Generator       } from "../Generator.js";
 import { SymbolUtils     } from "../SymbolUtils.js";
+import { DebugTypeWorker } from "./TypeWorker.js";
 import { TypeWorker      } from "./TypeWorker.js";
 import { Utils           } from "../Utils.js";
 
@@ -49,15 +50,16 @@ static includeInCompileResults = true;
 
 constructor(parents, options)
 {
+    let typeWorkerClass = options["dev-main-thread-ts"] ? DebugTypeWorker : TypeWorker;
+
     if (!sWorkers) {
         sWorkers = [ ];
 
         for (let i = 0; i < sWorkerCount; i++) {
-            sWorkers.push(new TypeWorker());
+            sWorkers.push(new typeWorkerClass())
         }
     }
 
-    
     this._checkerID = sNextCheckerID++;
     this._groupID = parents?.[0]?._groupID ?? sNextGroupID++;
     this._parents = parents;
@@ -115,7 +117,7 @@ constructor(parents, options)
         tsOptions = { "dev-fast-test": true };
     }
     
-    for (let i = 0; i < sWorkerCount; i++) {
+    for (let i = 0; i < sWorkers.length; i++) {
         sWorkers[i].prepare(this._checkerID, this._groupID, tsOptions);
     }
 }
