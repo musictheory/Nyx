@@ -385,9 +385,7 @@ generate()
         let replacement = "";
         
         if (replacements.length) {
-            replacement = forTypechecker ?
-            replacements.join("") :
-            `const ${replacements.join(",")};`
+            replacement = forTypechecker ? replacements.join("") : `const ${replacements.join(",")};`
         }
 
         modifier.replace(node, replacement);
