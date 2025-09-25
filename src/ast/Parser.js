@@ -71,6 +71,16 @@ static parse(contents, options)
 }
 
 
+raiseRecoverable(pos, message)
+{
+    if (message.includes("Duplicate constructor")) {
+        return;
+    }
+
+    return super.raiseRecoverable(pos, message);
+}
+
+
 saveState()
 {
     return {
