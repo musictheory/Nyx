@@ -49,15 +49,15 @@ updateWithContentsAndTime(contents, time)
 }
 
 
-addImport(name)
+addImport(name, local)
 {
-    this.imports.push(name);
+    this.imports.push({ name, local });
 }
 
 
 addExport(name)
 {
-    this.exports.push(name);
+    this.exports.push({ name });
 }
 
 

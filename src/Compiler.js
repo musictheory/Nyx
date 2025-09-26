@@ -173,28 +173,26 @@ async _fillImports(inOutFiles, model)
     let filePaths = inOutFiles.map(f => f.path);
 
     for (let file of inOutFiles) {
-        let importMap = new Map();
+        let imports = [ ];
 
-        for (let importName of file.imports) {
-            let object = model.get(importName);
+        for (let { name, local } of file.imports) {
+            let object = model.get(name);
             if (!object) continue;
-            
-            if (object instanceof Model.Runtime) {
-                importMap.set(importName, { object: object, importType: ScopeManager.ImportType.Past });
 
-            } else {
+            let importType = ScopeManager.ImportType.Past;
+
+            if (!(object instanceof Model.Runtime)) {
                 let path = object.location.path;
-                let importType = ScopeManager.ImportType.Past;
 
                 if (path && filePaths.includes(path) && !pastPaths.includes(path)) {
                     importType = ScopeManager.ImportType.Future;
                 }
-
-                importMap.set(importName, { object: object, importType: importType });
             }
+
+            imports.push({ name: local, object, importType });
         }
-        
-        file.scopeManager.finish(importMap);
+
+        file.scopeManager.finish(imports);
 
         pastPaths.push(file.path);
     }
@@ -210,7 +208,7 @@ async _reorderFiles(inOutFiles, model)
     let outFiles = [ ];
 
     for (let file of inOutFiles) {
-        let imports = file.imports;
+        let importNames = file.imports.map(theImport => theImport.name);
         let scopeManager = file.scopeManager;
         
         scopeManager.reset();
@@ -218,7 +216,7 @@ async _reorderFiles(inOutFiles, model)
         for (let declaration of scopeManager.getTopLevelDeclarations()) {
             let superClassName = declaration?.object?.superClassName;
 
-            if (superClassName && (imports.indexOf(superClassName) >= 0)) {
+            if (superClassName && (importNames.indexOf(superClassName) >= 0)) {
                 let set = nameToDependentsMap.get(superClassName) ?? new Set();
                 set.add(file);
                 nameToDependentsMap.set(superClassName, set);            
@@ -252,8 +250,8 @@ async _reorderFiles(inOutFiles, model)
         
         addedFiles.add(file);
 
-        for (let exportName of file.exports) {
-            let dependents = nameToDependentsMap.get(exportName) || new Set();
+        for (let { name } of file.exports) {
+            let dependents = nameToDependentsMap.get(name) || new Set();
             
             for (let dependent of dependents) {
                 visit(dependent);

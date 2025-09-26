@@ -163,7 +163,7 @@ reset()
 }
 
 
-finish(importMap)
+finish(imports)
 {
     function merge(...args) {
         return Object.assign(Object.create(null), ...args);
@@ -186,9 +186,9 @@ finish(importMap)
     let rootValues = merge(root.valueDeclarations);
     let rootTypes  = merge(root.typeDeclarations);
     
-    for (let [ key, { object, importType } ] of importMap) {
-        let declaration = new ScopeDeclaration(key, object, importType);
-        this._imports.set(key, declaration);
+    for (let { name, object, importType } of imports) {
+        let declaration = new ScopeDeclaration(name, object, importType);
+        this._imports.set(name, declaration);
         this._addObjectDeclaration(declaration, rootValues, rootTypes);
     }
     

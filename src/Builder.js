@@ -129,12 +129,7 @@ build()
                 throw new CompilerIssue("Namespace imports are not supported", node);
 
             } else if (specifier.type === Syntax.ImportSpecifier) {
-                if (specifier.local.name !== specifier.imported.name) {
-                    throw new CompilerIssue("Import 'as' is not supported", node);
-                }
-                
-                let importName = specifier.imported.name;
-                file.addImport(importName);
+                file.addImport(specifier.imported.name, specifier.local.name, node);
             }
         }
     }

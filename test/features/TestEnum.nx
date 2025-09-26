@@ -87,11 +87,13 @@ export enum Foo { zero, one };
 
 // @file: 2.nx
 // ----------------------------------------------------------------------------
-import { Foo };
+import { Foo, Foo as F };
 
 assert.equal(Foo.zero, 0);
 assert.equal(Foo.one,  1);
 
+assert.equal(F.zero, 0);
+assert.equal(F.one,  1);
 
 
 // @test: Unknown Member Warning

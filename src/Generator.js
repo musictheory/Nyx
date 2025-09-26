@@ -345,20 +345,20 @@ generate()
 
     function handleImportDeclaration(node)
     {
-        let specifiers = node.specifiers;
-        let length = specifiers.length;
-
         let replacements = [ ];
         
-        for (let i = 0; i < length; i++) {
-            let specifier = specifiers[i];
+        for (let specifier of node.specifiers) {
+            let name  = specifier.imported.name;
+            let local = specifier.local.name;
+            let declaration = scopeManager.getImport(local);
 
-            let name = specifier.imported.name;
-            let declaration = scopeManager.getImport(name);
-                
             if (!declaration) {
                 warnings.push(new CompilerIssue(`Unknown import: "${name}"`, specifier));
                 continue;
+            }
+
+            if (name != local && !(declaration.object instanceof Model.Enum)) {
+                throw new CompilerIssue(`Import 'as' is not supported for '${name}'`, specifier);
             }
             
             if (declaration.object instanceof Model.Runtime) {
@@ -374,9 +374,13 @@ generate()
                 }
                 
                 let importPath = path.relative(path.dirname(filePath), toPath);
-                replacements.push(`import { ${name} } from "${importPath}";`);
+                replacements.push(`import { ${name} as ${local} } from "${importPath}";`);
             
             } else if (declaration.importType == ScopeManager.ImportType.Past) {
+                if (declaration.object instanceof Model.Enum) {
+                    continue;
+                }
+
                 let expression = SymbolUtils.getImportExpression(name, squeezer);
                 replacements.push(`${name} = ${expression}`);
             }
