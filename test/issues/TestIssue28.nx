@@ -1,0 +1,10 @@
+// @test: Issue 28
+// @typecheck
+// ============================================================================
+
+enum Foo { alpha, beta, gamma }
+
+try {
+    let Bar = Foo; // @type
+    for (let i in Foo) { } // @type
+} catch (e) { }

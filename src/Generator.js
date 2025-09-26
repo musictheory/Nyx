@@ -645,6 +645,13 @@ generate()
         modifier.insert(node.start, "(");
         modifier.replace(node.typeAnnotation.end, node.end, " | null)");
     }
+    
+    function handleNXEnumDeclaration(node)
+    {
+        if (forTypechecker) {
+            modifier.replace(node.start, node.id.start, "const enum ");
+        }
+    }
 
     function handleNXGlobalDeclaration(node)
     {
@@ -879,6 +886,9 @@ generate()
             
         } else if (type === Syntax.NXNullableType) {
             handleNXNullableType(node);
+
+        } else if (type === Syntax.NXEnumDeclaration) {
+            handleNXEnumDeclaration(node);
 
         } else if (type === Syntax.NXGlobalDeclaration) {
             handleNXGlobalDeclaration(node);
