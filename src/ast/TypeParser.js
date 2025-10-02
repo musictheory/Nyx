@@ -84,6 +84,7 @@ export class TypeParser extends AcornParser {
 #inType = false;
 #allowsConditionalTypes = true;
 #allowsNullableTypes = true;
+#allowsOptionalIdent = false;
 
 
 readToken_lt_gt(code)
@@ -105,6 +106,19 @@ saveState()
 restoreState(state)
 {
     throw new Error("TypeParser is abstract and needs a restoreState() implementation.");
+}
+
+
+tsSetAllowsOptionalIdentAnd(yn, callback)
+{
+    let oldAllowsOptionalIdent = this.#allowsOptionalIdent;
+    this.#allowsOptionalIdent = yn;
+    
+    try {
+        return callback();
+    } finally {
+        this.#allowsOptionalIdent = oldAllowsOptionalIdent;
+    }
 }
 
 
@@ -423,21 +437,23 @@ tsIsStartOfFunctionType()
 
 tsParseBindingListForSignature()
 {
-    return super.parseBindingList(tt.parenR, true, true).map(pattern => {
-        // This check appears to be unnecessary, as parseBindingList() 
-        // always returns one of the listed node types
-        /* node:coverage disable */
-        if (
-            pattern.type !== "Identifier" &&
-            pattern.type !== "RestElement" &&
-            pattern.type !== "ObjectPattern" &&
-            pattern.type !== "ArrayPattern"
-        ) {
-            this.unexpected(pattern.start);
-        }
-        /* node:coverage enable */
+    return this.tsSetAllowsOptionalIdentAnd(true, () => {
+        return super.parseBindingList(tt.parenR, true, true).map(pattern => {
+            // This check appears to be unnecessary, as parseBindingList() 
+            // always returns one of the listed node types
+            /* node:coverage disable */
+            if (
+                pattern.type !== "Identifier" &&
+                pattern.type !== "RestElement" &&
+                pattern.type !== "ObjectPattern" &&
+                pattern.type !== "ArrayPattern"
+            ) {
+                this.unexpected(pattern.start);
+            }
+            /* node:coverage enable */
 
-        return pattern;
+            return pattern;
+        });
     });
 }
 
@@ -1192,6 +1208,23 @@ tsParseHeritageClause(token)
     }
 
     return delimitedList;
+}
+
+
+parseBindingListItem(param)
+{
+    if (this.type == tt.question && this.#allowsOptionalIdent) {
+        param.optional = true;
+        param.question = this.nxParsePunctuation();
+    }
+
+    if (this.type == tt.colon) {
+        param.typeAnnotation = this.tsParseTypeAnnotation();
+    }
+
+    this.tsResetEndLocation(param);
+
+    return param;
 }
 
 

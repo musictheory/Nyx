@@ -63,6 +63,7 @@ const SupportedTypeAnnotations = [
     "(a: string, b: string) => number",
     "(a: string, b: string) \n=> number",
     "(a: string, b: string) =>\n number",
+    "(a: string, b?: string) =>\n number",
 
     "(a: string, ...rest) => number",
     "(a: string, [ b, c ]) => number",

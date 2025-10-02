@@ -57,7 +57,6 @@ function checkKeyName(node, name)
 export class Parser extends TypeParser {
 
 #newTypeParametersRefStack = [ ];
-#allowsOptionalIdent = false;
 
 
 static parse(contents, options)
@@ -109,19 +108,6 @@ restoreState(state)
 }
 
 
-nxSetAllowsOptionalIdentAnd(yn, callback)
-{
-    let oldAllowsOptionalIdent = this.#allowsOptionalIdent;
-    this.#allowsOptionalIdent = yn;
-    
-    try {
-        return callback();
-    } finally {
-        this.#allowsOptionalIdent = oldAllowsOptionalIdent;
-    }
-}
-
-
 readToken(code)
 {
     if (isIdentifierStart(code, true) || code === 92 /* '\' */) {
@@ -155,23 +141,6 @@ parseAssignableListItem(allowModifiers)
   
     // Call parseMaybeDefault() again to parse the assignment
     return this.parseMaybeDefault(left.start, left.loc, left);
-}
-
-
-parseBindingListItem(param)
-{
-    if (this.type == tt.question && this.#allowsOptionalIdent) {
-        param.optional = true;
-        param.question = this.nxParsePunctuation();
-    }
-
-    if (this.type == tt.colon) {
-        param.typeAnnotation = this.tsParseTypeAnnotation();
-    }
-
-    this.tsResetEndLocation(param);
-
-    return param;
 }
 
 
@@ -254,7 +223,7 @@ parseClassMethod(method, isGenerator, isAsync, allowsDirectSuper)
 
 parseMethod(isGenerator, isAsync, allowDirectSuper)
 {
-    return this.nxSetAllowsOptionalIdentAnd(true, () => {
+    return this.tsSetAllowsOptionalIdentAnd(true, () => {
         return super.parseMethod(isGenerator, isAsync, allowDirectSuper);
     });
 }
@@ -323,7 +292,7 @@ parseFunction(node, statement, allowExpressionBody, isAsync, forInit)
 
 parseFunctionParams(node)
 {
-    return this.nxSetAllowsOptionalIdentAnd(true, () => {
+    return this.tsSetAllowsOptionalIdentAnd(true, () => {
         node.typeParameters = this.tsTryParseTypeParameters("const");
         super.parseFunctionParams(node);
     });
