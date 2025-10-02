@@ -18,7 +18,7 @@ import { Parser } from "../src/ast/Parser.js";
 
 import { parse as acornParse } from "acorn";
 
-Error.stackTraceLimit = 20;
+Error.stackTraceLimit = 50;
 
 
 const Usage = `Usage: nyxdev.js [OPTIONS] INPUT_FILES
@@ -182,7 +182,7 @@ function main()
     }
 
     nyx.compile(options).then(result => {
-        if (parsedArgs.values["raw-errors"] && result.errors.length > 0) {
+        if (parsedArgs.values["errors"] && result.errors.length > 0) {
             console.error(result.errors);
         } else {
             printIssues(result.errors);
