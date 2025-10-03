@@ -164,8 +164,11 @@ function fromFuncString(string)
     let m = string.match(/(.*?)\((.*?)\)/);
     if (!m) return null;
     
-    let base = m[1];
-    let labels = m[2].split(":").map(l => (l == "_" ? "" : l));
+    let base = m[1].trim();
+    let labels = m[2].split(":").map(l => {
+        l = l.trim();
+        return (l == "_" ? "" : l);
+    });
     labels.pop();
     
     return { base, labels };

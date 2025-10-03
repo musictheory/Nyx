@@ -802,11 +802,14 @@ Nyx includes a small runtime API for advanced situations. It can be accessed via
 | **Nyx.observerSymbol** | Used by [Property Observers](#property-observers).
 | **Nyx.reportUndefined** | Used by [Undefined Guards](#undefined-guards).
 
-**Nyx.getFuncIdentifier()**
+**Nyx.getFunc()** / **Nyx.getFuncIdentifier()**
 
-To access a `func` via bracket notation, use `Nyx.getFuncIdentifier` with a constant string. For example:
+To access the `Function` implementation of a `func`:
 
-```
+- Use `Nyx.getFunc(object, funcName)`
+- Use `Nyx.getFuncIdentifier(funcName)` to get the property name, then use bracket notation.
+
+```typescript
 import { Nyx };
 
 class Logger {
@@ -820,11 +823,15 @@ class Logger {
 
 let logger = new Logger();
 
+Nyx.getFunc(logger, "log(foo:bar:)")("1", "2"); // Prints "A: 1, 2"
+Nyx.getFunc(logger, "log(_  :bar:)")("1", "2"); // Prints "B: 1, 2"
+
+// Alternatively, use Nyx.getFuncIdentifier() with bracket notation
 let propertyName = Nyx.getFuncIdentifier("log(foo:bar:)");
-logger[propertyName]("1", "2"); // Prints "A: 1, 2"
+(logger as any)[propertyName]("1", "2"); // Prints "A: 1, 2"
 
 let propertyName2 = Nyx.getFuncIdentifier("log(_:bar:)");
-logger[propertyName]("1", "2"); // Prints "B: 1, 2"
+(logger as any)[propertyName]("1", "2"); // Prints "B: 1, 2"
 ```
 
 

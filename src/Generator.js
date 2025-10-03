@@ -114,21 +114,24 @@ generate()
     {
         let propertyName = node.property.name;
 
-        let replaceParent = false; 
-        let replacement   = null;
-      
-        // Nyx.getFuncIdentifier()
-        if (propertyName == "getFuncIdentifier") {
+        let replacement = null;
+        
+        function isCallWithArgumentsLength(length) {
+            return parent.type == Syntax.CallExpression &&
+                   parent.arguments.length == length;
+        }
+        
+        function getFuncIdentifier(index) {
             if (
                 parent.type != Syntax.CallExpression ||
-                parent.arguments.length != 1 ||
-                parent.arguments[0].type != Syntax.Literal ||
-                typeof parent.arguments[0].value !== "string"
+                parent.arguments[index].type != Syntax.Literal ||
+                typeof parent.arguments[index].value !== "string"
             ) {
-                throw new CompilerIssue(`Invalid use of Nyx.getFuncIdentifier`, node);
-            }
-            
-            let funcString = parent.arguments[0].value;
+                return null;
+
+            }        
+
+            let funcString = parent.arguments[index].value;
             let funcComponents = SymbolUtils.fromFuncString(funcString);
 
             if (!funcComponents) {
@@ -143,9 +146,36 @@ generate()
             if (squeezer) {
                 funcIdentifier = squeezer.squeeze(funcIdentifier);
             }
+            
+            return funcIdentifier;
+        }
 
-            replaceParent = true;
-            replacement = `"${funcIdentifier}"`;
+        // Nyx.getFunc()
+        if (propertyName == "getFunc") {
+            if (!isCallWithArgumentsLength(2)) {
+                throw new CompilerIssue(`Invalid use of Nyx.getFunc`, node);
+            }
+
+            let funcIdentifier = getFuncIdentifier(1);
+      
+            let castString = forTypechecker ? " as any" : "";
+      
+            toSkip.add(parent.arguments[1]);
+            modifier.replace(parent.start, parent.arguments[0].start, "(");
+            modifier.replace(parent.arguments[0].end, parent.arguments[1].start, `${castString})[`);
+            modifier.replace(parent.arguments[1], `"${funcIdentifier}"`);       
+            modifier.replace(parent.arguments[1].end, parent.end, "]");
+
+        // Nyx.getFuncIdentifier()
+        } else if (propertyName == "getFuncIdentifier") {
+            let funcIdentifier = getFuncIdentifier(0);
+            
+            if (!funcIdentifier) {
+                throw new CompilerIssue(`Invalid use of Nyx.getFuncIdentifier`, node);
+            }
+
+            toSkip.add(parent.arguments[0]);
+            modifier.replace(parent, `"${funcIdentifier}"`);
         
         // Nyx.dispatchInit()        
         } else if (propertyName == "dispatchInit") {
@@ -178,10 +208,7 @@ generate()
         toSkip.add(node.object);
         toSkip.add(node.property);
 
-        if (replaceParent && (parent.type == Syntax.CallExpression)) {
-            parent.arguments.forEach(a => toSkip.add(a));
-            modifier.replace(parent, replacement);
-        } else {
+        if (replacement) {
             modifier.replace(node, replacement);
         }
     }
