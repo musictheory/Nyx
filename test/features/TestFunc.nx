@@ -17,6 +17,14 @@ class Foo {
     func f(c): string { return "f(c:)"; } // @type
 
     func noArg(): string { return "noArg()"; }
+
+
+    func overload( _ a: null ): null
+    func overload( _ a: string ): string
+    func overload( _ a: string? ): string?
+    {
+        return a;
+    }
 }
 
 let foo = new Foo();
@@ -31,6 +39,8 @@ assert.equal(foo.f(c: {}), "f(c:)");
 
 assert.equal(foo.noArg(), "noArg()");
 
+assert.equal(foo.overload(null),  null);
+assert.equal(foo.overload("foo"), "foo");
 
 
 // @test: Async func

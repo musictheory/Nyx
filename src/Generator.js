@@ -822,6 +822,11 @@ generate()
         let isStatic = node.static;
         let baseName = node.key.name;
 
+        if (!forTypechecker && !node.body) {
+            modifier.remove(node);
+            return Traverser.SkipNode;
+        }
+
         isStaticStack.push(currentIsStatic);
         currentIsStatic = isStatic;
 
